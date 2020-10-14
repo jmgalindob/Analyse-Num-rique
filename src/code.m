@@ -21,24 +21,34 @@ brown = y + 0.3*b; % Original + volumen*ruido café
 % audiowrite('Original.wav',y,F);
 
 % Lectura de los audios obtenidos de los métodos
-[yw,Fyw] = audioread('AW0,3_RNNoise.wav');
-[yp,Fyp] = audioread('AP0,3_RNNoise.wav');
-[yb,Fyb] = audioread('AB0,3_RNNoise.wav');
-[yy,Fyy] = audioread('Original_RNNoise.wav');
+% Método RNNoise
+[yw1,Fyw1] = audioread('AW0,3_RNNoise.wav');
+[yp1,Fyp1] = audioread('AP0,3_RNNoise.wav');
+[yb1,Fyb1] = audioread('AB0,3_RNNoise.wav');
+[yy1,Fyy1] = audioread('Original_RNNoise.wav');
+% Método Wienner
+[yw2,Fyw2] = audioread('AW0,3_Wienner.wav');
+[yp2,Fyp2] = audioread('AP0,3_Wienner.wav');
+[yb2,Fyb2] = audioread('AB0,3_Wienner.wav');
+[yy2,Fyy2] = audioread('Original_Wienner.wav');
 
 % Medición de ruido resultante
-Methods = {'Sans méthode', 'RNNbruit', 'Butter T'}; % Vector nombres métodos
+Methods = {'Sans méthode', 'RNNbruit', 'Wienner', 'Butter T'}; % Vector nombres métodos
 O = [clean white pink brown]; % Array audios sin métodos
-M1 = [yy yw yp yb]; % Array audios con método RNNoise
+M1 = [yy1 yw1 yp1 yb1]; % Array audios con método RNNoise
+M2 = [yy2 yw2 yp2 yb2]; % Array audios con método Wienner
 
 % Inicialización y tamaño de los vectores a usar
 [qY, qW, qP, qB] = deal(zeros(1,3), zeros(1,3), zeros(1,3), zeros(1,3));
-for i = 1:2
+for i = 1:3
     if i == 1
         X = O;
-    else
+    elseif i == 2
         X = M1;
+    else
+        X = M2;
     end
+    % Medición de NSR = 1 - SNR
     qY(i) = abs(1 - var(X(:,1))/var(X(:,1)));
     qW(i) = abs(1 - var(X(:,1))/var(X(:,2)));
     qP(i) = abs(1 - var(X(:,1))/var(X(:,3)));
@@ -46,10 +56,10 @@ for i = 1:2
 end
 
 % Valores del método Butter Teórico
-qY(3) = 0;
-qW(3) = 0.1;
-qP(3) = 0.35;
-qB(3) = 0.35;
+qY(4) = 0;
+qW(4) = 0.1;
+qP(4) = 0.35;
+qB(4) = 0.35;
 
 % Gerenación de la tabla de resultados y Display
 T = table(qY'*100, qW'*100, qP'*100, qB'*100, 'VariableNames',...
