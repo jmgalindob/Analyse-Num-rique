@@ -40,26 +40,56 @@
 \maketitle
 
 \begin{abstract}
-%\lipsum[3]
+L’atténuation du bruit est un domaine d’étude actif dans des milieux comme le traitement digital et analogique des signaux. Dans ce domaine il existe une grande variété d’algorithmes et/ou méthodes classiques et modernes qui sont utilisé dans ce but. Dans ce travail de recherche, nous réaliserons une étude théorique du filtre analogique passe-bas avec une approximation de Butterworth, le filtre de Weiner et la méthode dite hybride de DSP/Deep Learning RNNbruit. Puis nous développerons une analyse de ces trois méthodes où nous comparerons les résultats de signaux lorsque nous filtrons un signal propre, un signal avec addition de bruit blanc, un signal avec addition de bruit rosa et un signal avec addition de bruit rouge. Les enregistrement audios résultant de chaque méthode filtrage seront comparer qualitativement et quantitativement, d’où la nécessité de tenir en compte la perception auditive du récepteur. Finalement, nous proposerons des modifications sur la mise en œuvre ou implémentation de ces méthodes en considérant le contexte et le bon fonctionnement dans ce dernier. 
 \end{abstract}
 
 \section{Introduction}
 %\lipsum[1]
 
 \section{Concepts fondamentaux}
+
 Signal: un signal est la representation physique de l'information, qu'il convoit de sa source a sa destination.
+
 
 Bruit: Un bruit correspond a tout phénomène gênant la transmission ou l'interpretation d'un signal
 
+Traitement du signal : Le traitement du signal est une discipline qui étudie des méthodes de traitement, d’analyse et d’interprétation des signaux. Pour cela, dans ce domaine on utilise des méthodes tels que le contrôle, le filtrage, la compression et la transmission de données, la réduction du bruit, la déconvolution, la prédiction, l'identification, la classification.  
+
+
+Filtrage : On appelle "filtrage" toute application qui, à un signal fe(t), dit "signal d'entrée", associe un signal fs(t), dit "signal de sortie", tel que le module du spectre de fs(t) soit inférieur ou égal au module du spectre de fs(t), pour w réel quelconque. 
 
 \subsection{Signal sonore et note audio}
-%\lipsum[3]
+Le son ou signal sonore est une perturbation mécanique d’un état d’équilibre, qui se propage à travers d’un milieu solide élastique. Il est possible de le définir subjectivement comme ceux qui est perçu par l’ouïe, mais cela reviendra à restreindre la définition même d’un signal. De même, la lumière est perçue par la vue mais il existe certaines longueurs d’ondes lumineuse qui ne sont pas perçu par l’œil humain. Il existe donc des domaines de fréquences des signaux sonores qui ne sont pas perçu par l’ouïe humain. 
+
+Dans un premier temps, en s’appuyant sur le point de vue physique, les ondes sonores se propage à travers l’air ou autres milieux (solides et élastiques) sous forme de longueur d’ondes, où la vibration mécanique qui décrit l’onde se propage dans la même direction que la propagation de celle-ci. L’air peut être compris comme un milieu élastique sur lequel les particules, ou tout simplement les couches d’air, ont un comportement semblable à un ressort, c’est-à-dire qu’elles “se poussent” et “s’attirent” les unes avec les autres. 
 
 \subsection{Représentation d’un fichier audio dans un ordinateur}
 %\lipsum[3]
 
 \subsection{Bruit et types de bruit}
-%\lipsum[3]
+Comme vue précédemment, le bruit dans un signal sonore correspond à une perturbation de celui-ci entrainant des pertes de d’information. Il existe plusieurs types de bruit qui ont leurs propres domaines de fréquences et qui altèrent ou modifient l’information contenue dans un signal de façon différente. En effet, entre les différents types de bruits nous pouvons remarqués 2 groupes très importants : Les bruits dit naturels et les bruits dit industriels.  
+
+Dans un premier temps, en regardant les bruits naturels nous pouvons nous rendre compte que ces bruits ne sont pas produits de façon artificielle et existe par différentes raisons. Dans cette famille de bruit nous pouvons trouvés le bruit ambiant qui correspond au bruit total existant dans une situation donnée pendant un intervalle de temps donné, ainsi que les bruits qui le compose telles que le bruit résiduel et le bruit particulier. De plus, nous trouvons aussi des bruits dis colorées telles que le bruit blanc ou le bruit rose, qui feront objet de notre étude de filtrage. Tout d’abord, il faut remarquer que le bruit blanc est un bruit composé par la somme de tous le bruit coloré, c’est à dire l’addition en fréquence du bruit rose, bruit rouge ou brownien, bruit bleu ou azur, bruit violet et bruit gris. Chacun d’entre eux aillant un domaine de fréquence particulier et des caractéristique propre. Par exemple : 
+
+ - Le bruit rouge ou brownien correspond dans une première approximation, dans les domaines qui utilisent des définitions précises, la terminologie « bruit rouge », « bruit brownien » ou « bruit brun » fait référence au son ayant une puissance sonore qui décroît de 6 dB par octave lorsque la fréquence augmente (densité proportionnelle à 1/f ) sur un intervalle de fréquence n'incluant pas de DC (Qui dans un sens général, n'inclut pas de composante constante, ou de valeur pour f=0). 
+
+D’un autre point de vue, dans les domaines qui utilisent des définitions plus approximatives, le « bruit rouge » correspond à tout son dont la densité de puissance diminue lorsque la fréquence augmente3. 
+
+Plus exactement Le bruit rouge, peut être obtenu en utilisant un algorithme simulant le mouvement brownien ou par intégration mathématique du bruit blanc.  
+
+- Le bruit bleu qui correspond à un bruit qui augmente sa puissance sonore de 3 dB par octave lorsque la fréquence augmente (densité proportionnelle à f), et ce jusqu’à une fréquence infinie. 
+
+Dans le domaine de l’informatique graphique, le terme « bruit bleu » est parfois utilisé d’une façon plus approximative pour décrire tout son de puissance sonore minimale à basse fréquence et ne présentant aucun pic lorsque la fréquence augmente (croissance constante). 
+
+Il est convenable de connaitre et différencier aussi le bruit rose des autres types de bruits coloré, dans la mesure que ce type de bruit fait partie de notre étude. Donc le bruit rose, ce type de bruit est caractérisé par une puissance égale sur des bandes proportionnelles en largeur. Une bande correspond en fait à un changement de fréquence (hausse ou baisse à exprimer en pourcentage de l’une des extrémités de l’intervalle). Par exemple, la puissance d’un bruit rose est la même sur les intervalles allant de 40 à 60 Hz et de 4 000 à 6 000 Hz car ces intervalles sont proportionnels (ils correspondent à une hausse de 50 pourcent de la fréquence). 
+
+Dans un deuxième temps, nous voyons l’existence d’une deuxième famille de bruits que nous choisissant de nommé des bruits industriels. En effet, comme son nom l’indique les bruits industriels sont des perturbations sonores produits par l’industrie ou par des effet industrie. Dans cette famille nous trouvons des bruits tels que le bruit de route qui est un bruit normalisé. Il est une référence pour le bruit des trafics routiers et ferroviaires. Son spectre est enrichi en basses fréquences et appauvri dans les aiguës par rapport à un bruit rose. Mais aussi nous trouvons des bruits comme les suivants : 
+
+Le bruit d’impact : c’est le bruit transmis par une paroi mise en vibration par un choc (bruit de pas, déplacement de meubles, chute d’objet, enfoncement d’un clou dans un mur...). 
+
+ Le bruit aérien : c’est le bruit propagé dans l’air (bruit de voix, bruit de télévision, bruit de circulation...). 
+
+Le bruit solidien : c’est le bruit propagé dans les milieux solides comprenant (le bruit d’impact transmis par les éléments solides, le bruit d’équipement (chaufferie, ascenseurs, ...). 
 
 \section{Méthodes}
 Le but de ce projet est de implementer le filtrage dans les notes audios dans l'objectif d'attenuer le bruit present. Pour cela nous allons implementé le filtrage analogique avec une approximation de Butterworth, la méthode RNN et un autre qui reste définir.
@@ -81,4 +111,3 @@ Finalement, lorsque nous analysons les résultats obtenus en utilisant le filtre
 
 
 \end{document}
-
