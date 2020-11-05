@@ -61,8 +61,15 @@ qW(4) = 0.1;
 qP(4) = 0.35;
 qB(4) = 0.35;
 
-% Gerenación de la tabla de resultados y Display
-T = table(qY'*100, qW'*100, qP'*100, qB'*100, 'VariableNames',...
-    {'Original', 'Blanc (30%)', 'Rose (30%)', 'Marron (30%)'}, ...
-    'RowNames', Methods);
-display(T)
+% Gerenación de las tablas de resultados y Display
+% Tabla ruido blanco
+T1 = table(qW'*100, 'VariableNames',{'Blanc (30%)'},'RowNames', Methods);
+display(T1)
+
+% Tabla ruido rosa
+T2 = table(qP'*100, 'VariableNames',{'Rose (30%)'},'RowNames', Methods);
+display(T2)
+
+% Tabla ruido café
+T3 = table(qB'*100, 'VariableNames',{'Marron (30%)'},'RowNames', Methods);
+display(T3)
