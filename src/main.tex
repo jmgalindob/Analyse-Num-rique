@@ -224,6 +224,9 @@ Para visualizar el efecto de la cuantización del audio y la influencia de la fr
 
 Así como lo sugiere la figura anterior, la frecuencia de muestreo y la profundidad de bit juegan un papel fundamental en la determinación de la calidad del audio resultante.
 
+\subsection{Sonido Mono vs Sonido Stereo}
+
+
 \subsection{Almacenamiento de un sonido digital en el computador}
 En un computador usualmente se utiliza el método de modulación por impulsos codificados (PCM, Pulse-code modulation en inglés) para transformar la señal análoga en una secuencia de bits (señal digital). Este método fue inventado por Alec Reeves en 1937 y es la forma estándar de audio digital en las computadoras. (ref) 
 
@@ -308,6 +311,245 @@ bruits comme les suivants :
 Le but de ce projet est de implementer le filtrage dans les notes audios dans l'objectif d'attenuer le bruit present. Pour cela nous allons implementé le filtrage analogique avec une approximation de Butterworth, la méthode RNN et un autre qui reste définir.
 
 \subsection{\textbf{Filtre de Butterworth}}
+
+\subsubsection{definition du filtrage}
+\medskip
+Le filtrage est une forme de traitement de signal, obtenu en envoyant le signal à travers un ensemble de circuits électroniques, qui modifient son spectre de fréquence et/ou sa phase et donc sa forme temporelle. Il peut s‘agir soit : 
+
+ - d’éliminer ou d’affaiblir des fréquences parasites indésirables 
+
+- d’isoler dans un signal complexe la ou les bandes de fréquences utiles. 
+
+Il existe plusieurs types de filtres : passe-bas, passe-haut, passe-bande, coupe-bande, passe-tout. Dans notre étude, nous allons nous concentrer dans les filtres passe-bas.
+\medskip
+\subsubsection{Filtre passe-bas}
+Un filtre passe-bas est un filtre qui laisse passer les basses fréquences et qui atténue les hautes fréquences, c'est-à-dire les fréquences supérieures à la fréquence de coupure. Il pourrait également être appelé filtre coupe-haut. Le filtre passe-bas est l'inverse du filtre passe-haut et ces deux filtres combinés forment un filtre passe-bande. 
+
+Un filtre passe-bas peut être implémenté de façon analogique avec des composants électroniques. Ainsi, ce genre de filtre s'applique sur des signaux continus en temps réel. Les composants et la configuration du circuit fixeront les différentes caractéristiques du filtre, telles que l'ordre, la fréquence de coupure et son diagramme de Bode. Les filtres analogiques classiques sont du premier ou du second ordre. Il existe plusieurs familles de filtres analogiques : Butterworth, Tchebychev, Bessel, elliptique, etc. L'implémentation des filtres de même famille se fait généralement en utilisant la même configuration de circuit, et ceux-ci possèdent la même forme de fonction de transfert, mais ce sont les paramètres de celle-ci qui changent, donc la valeur des composants du circuit électrique.
+\medskip
+
+\paragraph{Filtre passe-bas du premier ordre}
+Un filtre passe-bas du premier ordre est caractérisé par sa fréquence de coupure $f(c)$.  La fonction de transfert du filtre est obtenue en dénormalisant le filtre passe-bas normalisé en en remplaçant $\omega_n$ par $\omega$ $\omega_c$,
+ce qui donne la fonction de transfert suivante :
+
+\begin{equation}
+    H(j\omega)= \frac{v_o}{v_i} = \frac{K}{1+j\frac{\omega}{\omega_c}}
+\end{equation}
+
+où
+\begin{itemize}
+    \item[] $v_i$ est le signal d'entrée
+    \item[] $v_0$ est le signal de sortir
+\end{itemize}
+
+
+Le module et la phase de la fonction de transfert sont égaux à :
+
+\begin{equation}
+    |H(\omega)|=|\frac{v_o}{v_i}|= \frac{K}{\sqrt{1 + (\frac{\omega}{\omega_c})^2}}
+\end{equation}
+
+\begin{equation}
+    \phi(\omega) = arg(H(j\omega)) = -arg(1 + j\frac{\omega}{\omega_c}) = \arctan(\frac{\omega}{\omega_c})
+\end{equation}
+
+Il y a plusieurs méthodes pour implémenter ce filtre. Une réalisation active et une réalisation passive sont ici présentées. K est le gain du filtre.
+
+\paragraph{Circuit actif}
+\hfill\\
+Il est  possible de réaliser un filtre passe-bas avec un circuit actif. Cette option permet d'ajouter du gain au signal de sortie, c'est-à-dire d'obtenir une amplitude supérieure à 0 dB dans la bande passante. Plusieurs configurations permettent d'implémenter ce genre de filtre.
+
+%imagen
+ \begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.5]{Circuit.png}
+    \caption{Un filtre passe-bas actif}
+\end{figure}
+
+Un filtre passe-bas actif
+Dans la configuration présentée ici, la fréquence de coupure se définit comme suit :
+
+\begin{equation}
+    f_c = \frac{1}{2\pi R_2C} ou  \omega_c = \frac{1}{R_2 C}
+\end{equation}
+
+En utilisant les propriétés des amplificateurs opérationnels, et les impédances des éléments, on obtient la fonction de transfert suivante :
+
+\begin{equation}
+    H(j\omega)= \frac{v_o}{v_i} = \frac{-R_2}{R_1} \cdot \frac{1}{1 + jR_2 C\omega}
+\end{equation}
+
+En basse fréquence, le condensateur agit comme un circuit ouvert, ce qui est confirmé par le fait que le terme de droite de l'équation précédente tend vers 1. La formule simplifiée ainsi obtenue nous donne le gain dans la bande passante :
+
+\begin{equation}
+    H(\omega)_{\omega \ll \omega_c}  = \frac{v_o}{v_i} = \frac{-R_2}{R_1}
+\end{equation}
+
+
+Avec la fonction de transfert, on peut démontrer que l'atténuation dans la bande rejetée est de 20 dB/décade ou de 6 dB par octave telle qu'attendu pour un filtre d'ordre 1.
+\medskip
+
+\paragraph{Filtre passe-bas du second ordre}
+\hfill\\
+Un filtre passe-bas du secon ordre est caractérisé par sa fréquence propre $f_0$ et par un facteur de qualité Q.  Il est représenté par la fonction de transfert suivante :
+
+
+\begin{equation}
+    H(j\omega) = \frac{v_o}{v_i} = \frac{K}{1 - (\frac{\omega}{\omega_0})^2 + j\frac{(\frac{\omega}{\omega_0})}{Q}}
+\end{equation}
+
+avec
+\begin{itemize}
+  \item[] $\omega =  2\pi f$
+  \item[] $\omega_0 = 2\pi f_0$ 
+\end{itemize}
+
+
+Le module et la phase de la fonction de transfert sont donc donnés par:
+
+\begin{equation}
+    |H(j\omega)| = |\frac{v_o}{v_i}| = \frac{K}{\sqrt{(1 - (\frac{\omega}{\omega_0})^2)^2 + (\frac{(\frac{\omega}{\omega_0})}{Q})^2}}
+\end{equation}
+
+\begin{equation}
+    \phi(\omega) = -arctan(\frac{\frac{(\frac{\omega}{\omega_0})}{Q}}{1 - (\frac{\omega}{\omega_0})^2})
+\end{equation}
+
+\subsubsection{Types de Filtres Analogiques Passe-bas}
+\paragraph{Approximation de Butterworth}
+\hfill \\
+Un filtre de Butterworth est un type de filtre linéaire, conçu pour posséder un gain aussi constant que possible dans sa bande passante.
+
+Les filtres de Butterworth furent décrits pour la première fois par l'ingénieur britannique Stephen Butterworth
+
+\begin{itemize}
+  \item[-] \textbf{Caractéristiques}
+  Le gain d'un filtre de Butterworth est le plus constant possible dans la bande passante et tend vers 0 dans la bande de coupure. Sur un diagramme de Bode logarithmique, cette réponse décroît linéairement vers -$\infty$, de -6 dB/octave (-20 dB/décade) pour un filtre de premier ordre, -12 dB/octave soit -40 dB/decade pour un filtre de second ordre, -18 dB/octave soit -60 dB/decade pour un filtre de troisième ordre, etc.
+  
+  %Imagen
+  \begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.5]{Filter.jpeg}
+    \caption{Gains de filtres de Butterworth passe-bas d'ordre 1 à 5 en fonction de la fréquence}
+\end{figure}
+  
+  \item[-] \textbf{Fonction de Transfert}
+  Le gain d'un filtre de Butterworth passe-bas d'ordre n est :
+  
+  \begin{equation}
+      G_n(\omega) = |H(j\omega)| = \frac{1}{\sqrt{1 + (\frac{\omega}{\omega_0})^2}}
+  \end{equation}
+
+\end{itemize}
+
+Avec
+\begin{itemize}
+    \item[] $G_n$ est le gain du filtre.
+    \item[] $H_n$ sa fonction de transfert.
+    \item[] $j$ l'unité imaginaire $j^2 = -1$
+    \item[] $\omega$ la fréquence angulaire (ou pulsation) du signal en radians par seconde ($\omega = 2\pi f$
+    \item[] et $\omega_c$ la fréquence de coupure (angulaire) du filtre (à -3dB).
+\end{itemize}
+En normalisant l'expression (c’est-à-dire en spécifiant $\omega_c = 1$):
+
+\begin{equation}
+    G_n(\omega) = |H(j\omega)| = \frac{1}{\sqrt{1 + \omega}^2}
+\end{equation}
+
+Les 2n-1 premières dérivées de $G_n$ sont nulles pour $\omega = 0$, impliquant une constance maximale du gain dans la bande passante.
+
+Aux hautes fréquences :
+
+\begin{equation}
+    |H(j\omega)|_{dB} \approx -20 \cdot n\log_{10}(\omega)
+\end{equation}
+Le roll-off du filtre (la pente du gain dans un diagramme de Bode) est de -20n dB/décade, où 'n' est l'ordre du filtre.
+
+Le gain ne représente que le module de la fonction de transfert $H(p)$ (au sens de la transformée de Laplace), ce qui laisse une certaine latitude pour déterminer cette dernière. On doit avoir
+
+\begin{equation}
+    H(p)H(-p) = \frac{G_0^2}{1 + (-\frac{p^2}{\omega_c^2})^n}
+\end{equation}
+
+Les pôles de cette expression sont équirépartis sur un cercle de rayon  $\omega_c$. Pour que le filtre soit stable, on choisit les pôles de la fonction de transfert comme ceux de $H(p)H(-p)$ ayant une partie réelle négative. Le k-ième pôle est donné à l'aide des racines n-ièmes de l'unité :
+
+\begin{equation}
+    -\frac{p_k^2}{\omega_k^2} = \exp({\frac{j(2k - 1)\pi}{n}}); k = 1,2,3,...,n
+\end{equation}
+    
+
+d'où
+
+\begin{equation}
+    p_k = \omega_c\exp{\frac{j(2k + n - 1)\pi}{2n}};  k = 1,2,3,...,n
+\end{equation}
+
+La fonction de transfert s'écrit en fonction de ces pôles :
+
+\begin{equation}
+    H(p) = \frac{G_0}{\prod{n=1}^{n}\frac{(p - p_k)}{\omega_c}}
+\end{equation}
+
+Le polynôme au dénominateur est appelé polynôme de Butterworth.
+
+\begin{center}
+    \begin{tabular}{|| c c||}
+    \hline
+    n & Polynôme de Butterworth $B_n(p)$ pour $w_c = 1$ \\ [0.5ex]
+    \hline \hline
+    1 & $(p + 1)$ \\
+    \hline
+    2 & $p^2 1.4142p + 1$ \\
+    \hline
+    3 & $(p + 1)(p^2 + p + 1)$ \\
+    \hline
+    4 & $(p^2 + 0.7654p + 1)(p^2 + 1.8478p + 1)$ \\
+    \hline
+    5 & $(p + 1)(p^2 + 0.6180p + 1)(p^2 1.6180p + 1)$ \\
+    \hline
+    6 & $(p^2 + 0.5176p + 1)(p^2 + 1.4142p + 1)(p^2 + 1.9319p + 1)$ \\
+    \hline
+    7 & $(p + 1)(p^2 0.4450p 1)(p^2 + 1.2470p + 1)(p^2 + 1.8019p + 1)$ \\
+    \hline
+    8 & $(p^2 + 0.3902p + 1)(p^2 + 1.1111p + 1)(p^2 + 1.6629p + 1)(p^2 + 1.9616 + 1)$ \\ [0.1ex]
+    \hline
+    \end{tabular}
+\end{center}
+
+
+
+
+Les polynômes normalisés de Butterworth peuvent être utilisés pour déterminer les fonctions de transfert de filtre passe-bas pour toute fréquence de coupure $\omega_c$ selon que:
+
+\begin{equation}
+    H(p) = \frac{G_0}{B_n(a)}, a = \frac{p}{\omega_c}
+\end{equation}
+
+\subsubsection{Notions Importantes}
+\paragraph{Diagramme de Bode}
+Le diagramme de Bode d'un système de réponse fréquentielle $T(j\omega)$ se compose de deux tracés :
+
+- le gain (ou amplitude) en décibels (dB). Sa valeur est calculée à partir de $20\log_1_0(|T(j\omega|)$
+
+- la phase en degré, donnée par $arg(T(j\omega))$
+
+L'échelle des pulsations est logarithmique et est exprimée en rad/s (radian par seconde). L'échelle logarithmique permet un tracé très lisible, car construit à partir de tronçons de ligne droite.
+
+%imagen
+%diagramme de Bode
+
+\paragraph{Transformée de Laplace}
+La transformée de Laplace d’une fonction f(t) est :
+\begin{equation}
+    F(s) = L{f(t)} = \int\limits_{0}^{\infty}\ f(t)\exp(-st) dt
+\end{equation}
+
+La transformée de Laplace permet de transformer le problème du domaine du temps au domaine de fréquence.
+Lorsqu’on obtient la réponse voulue dans le domaine de fréquence, on transforme le problème á nouveau dans le domaine du temps, á l’aide de la transformée inverse de Laplace, qui est definie par:
+
+\begin{equation}
+    f(t) = L^(-1){F(s)} = \frac{1}{2j\pi} \int\limits_{-\infty}^{\infty} \ F(s)\exp(st) ds
+\end{equation}
 
 \subsection{\textbf{Filtre de Wiener}}
 Le filtre de Wiener est une des meilleur filtres linaires de minimum carré. Il peut être utilisé pour prédire, estimer, interpoler, filtrer un signal et le bruit, entres autres. Pour créer ce type de filtre, il faut connaitre avoir une connaissance préalable du signal que le système aura comme entrée, c’est à dire le signal qui sera filtré. Le plus grand problème c’est que cette information est difficile à obtenir, c’est pour cela que les filtres adaptatifs sont très importants, parce qu’ils utilisent les données d’entrée pour pouvoir déterminer les données statistiques requis. En général, on a un signal $f(k)$, une réponse désiré $d(k)$ et un filtre linéaire de réponse impulsionnelle $h(k)$. Ce filtre est alimenté par $f(k)$ et produit une sortie $g(k)$. La différence entre le signal de sortie $g(k)$ et le signal désiré $d(k)$, est connue comme erreur d’estimation $e(k)$, la figure suivante illustre ce fait :
@@ -534,6 +776,7 @@ Où g est la fonction d’activation du neurone.
 \section{Résultats et comparaison des méthodes}
 Los métodos fueron implementados de forma cuantitativa y cualitativa. Para ambos casos se utilizó el software Matlab R2020a en el SO Microsoft Windows 10 Home Single Language (v. 10.0.19041). Para los casos de implementación se generó ruido blanco, rosa y café utilizando el software Audacity 2.4.2. Luego en Matlab se tomó el audio original y se crearon 3 audios adicionales al mezclar el audio original con 30\% de ruido blanco, 30\% de ruido rosa y 30\% de ruido café, respectivamente.
 
+
 \subsection{Résultats quantitatifs}
 En la tabla \ref{table:t1} se muestra el porcentaje de ruido
 resultante al aplicarle 30\% de ruido blanco al audio original y
@@ -544,7 +787,7 @@ filtrarlo con cada uno de los métodos.
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
     \hline
     Sans méthode & 80.658 \\
-    Wienner & 73.621 \\
+    Wienner & 44.218 \\
     Butter T & 10 \\
     RNNbruit & 9.9668 \\
     \end{tabular}
@@ -559,7 +802,7 @@ En la tabla \ref{table:t2} se muestra el porcentaje de ruido resultante al aplic
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
     \hline
     Sans méthode & 39.442 \\
-    Wienner & 65.359 \\
+    Wienner & 44.082 \\
     Butter T & 35 \\
     RNNbruit & 11.493 \\
     \end{tabular}
@@ -574,7 +817,7 @@ En la tabla \ref{table:t2} se muestra el porcentaje de ruido resultante al aplic
     \textbf{Méthodes} & \textbf{Marron (30\%)} \\
     \hline
     Sans méthode & 53.969 \\
-    Wienner & 62.248 \\
+    Wienner & 36.209 \\
     Butter T & 35 \\
     RNNbruit & 7.7496 \\
     \end{tabular}
@@ -590,47 +833,44 @@ Finalement, lorsque nous analysons les résultats obtenus en utilisant le filtre
 
 
 \subsection{Résultats qualitatifs}
-\hfill
-En la tabla \ref{table:t4} se muestra la calificación que se le dio a cada uno de los métodos para el audio original mezclado con 30\% de ruido blanco.
+\hfill \\
+Dans le tableau \ref{table:t4} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit blanc au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
 \begin{table}[hbt!]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
     \hline
-    Sans méthode &  \\
-    Wienner &  \\
-    Butter T &  \\
-    RNNbruit &  \\
+    Wienner &  4\\
+    Butter T &  8 \\
+    RNNbruit &  8.5 \\
     \end{tabular}
     \caption{Qualification des méthodes pour 30\% du bruit blanc}
     \label{table:t4}
 \end{table}
 \hfill \\
-En la tabla \ref{table:t5} se muestra la calificación que se le dio a cada uno de los métodos para el audio original mezclado con 30\% de ruido rosa.  
+Dans le tableau \ref{table:t4} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit rose au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.  
 \begin{table}[hbt!]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
     \hline
-    Sans méthode &  \\
-    Wienner &  \\
-    Butter T &  \\
-    RNNbruit &  \\
+    Wienner & 5 \\
+    Butter T &  6 \\
+    RNNbruit &  8 \\
     \end{tabular}
     \caption{Qualification des méthodes pour 30\% du bruit rose}
     \label{table:t5}
 \end{table}
 \hfill \\
-En la tabla \ref{table:t6} se muestra la calificación que se le dio a cada uno de los métodos para el audio original mezclado con 30\% de ruido café.
+Dans le tableau \ref{table:t4} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit rouge au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
 \begin{table}[hbt!]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Marron (30\%)} \\
     \hline
-    Sans méthode &  \\
-    Wienner &  \\
-    Butter T &  \\
-    RNNbruit &  \\
+    Wienner & 6  \\
+    Butter T &  4.5 \\
+    RNNbruit & 8 \\
     \end{tabular}
     \caption{Qualification des méthodes pour 30\% du bruit Marron}
     \label{table:t6}
@@ -645,9 +885,285 @@ En esta sección se realizan las descripciones e implementaciones de las modific
 
 \subsection{\textbf{Butterworth modifiée}}
 
+\subsubsection{Modifications de la fonction Matlab butter}
+
+fonction Dans un premier temps, nous avons choisis de de faire une modification de la méthode Matlab Butter, méthode que nous utilisons pour la création du filtre passe-bas avec un approximation de Butterworth. Pour cela, nous avons ouvert la méthode ou plutôt de script de la fonction butter avec la ligne de code suivante :
+
+\[ \texttt{edit butter}\]
+
+Lorsque nous rentrant cette ligne de code, Matlab nous renvois le script de la fonction butter, ci-dessous vous trouverais 2 images correspondantes à 2 parties différentes de ce script. La première montre le début du code, c'est à dire les commentaires qui explique le code et ce qu'il fait. La deuxième partie correspond à la partie du code qui permet faire le choix du type de filtre que nous voulant créer (passe-bas, passe-haut, coupe-bande et réjecteur de bande).
+
+%imagen
+%buttermod1
+
+%imagen
+%buttermod2
+
+Ensuite, nous avons cherché a modifié cette méthode sur les parties concernant les filtres passe bas. Il faut se rappeler que les filtres de butterworth sont de l’ordre n, ceci est la raison de notre modification. Nous voulons modifier l’ordre du filtre pour voir si cette modification entraine un changement dans les signaux de sortie obtenues. Pour cela, nous changeant l’ordre n des filtres passe bas de butterworth pour l’ordre 2n + 1. L’image ci-dessous montre une des modifications que nous avons fait dans le code.
+
+%imagen
+%buttermod3
+
+Après avoir effectué ces modifications nous procédons à sauvegarder les modifications, c'est à dire à sauvegarder le script butter.m sur lequel nous avons travaillé. Or, lorsque nous cliquons sur le buton "save" de Matlab, le message suivant nous apparait :
+
+%imagen
+%buttermod4
+
+Ce message veut dire que la fonction Matlab butter à une certaine privacité ce qui empêche toute modification de celle-ci. Par suite de cette découverte nous décidons d’effectuer la modification de la méthode en jouant avec la fréquence de coupure de celle-ci qui peut être considéré comme un paramètre externe de la fonction.
+
+\subsubsection{Modification du filtre de Butterworth à partir de la fréquence}
+Dans un deuxième temps, nous décidons d'effectuer la modification du filtre de passe-bas avec une approximation de Butterworth en jouant avec la fréquence de coupure. Tout d'abord, nous créant le filtre avec l'outil sptool de Matlab en rentrant la ligne de code ci-dessous :
+
+\[\texttt{sptool}\]
+
+Après avoir rentrée cette ligne de code une fenêtre dédier à l'analyse de signaux et création de filtres s'ouvre. En effet, sptool est un outil qui permet l'analyse des signaux, il est composé de 4 autres outils : Signal Browser, Filter Design and Analysis Tool, FVTool et Spectrum Viewer. Ces outils permettent l'accès a grande variété des fonctions des signaux, du filtrage et de l'analyse spectrale de la boite à outil. Lorsque nous rentrant dans ligne de code, elle exécute la commande SPTOOl.sptool et ouvre la fenêtre suivante :
+
+%imagen
+%buttermod5
+
+Nous allons nous intéresser aux colonnes Signals et Filters. Tout d'abords, la colonne Filters nous permet de créer un nouveau filtre. Pour cela, nous cliquons sur le buton New en bas de la colonne. En cliquant sur ce buton, une nouvelle fenêtre s'ouvre nous permettant de créer un nouveau filtre. Nous allons créer un filtre passe-bas de Butterworth d'ordre 2 avec une fréquence de coupure de 200 Hz et une fréquence de sortie de 60000 Hz. L'image ci-dessous illustre comment nous avons procédés pour créer le filtre en question.
+
+%imagen
+%buttermod6
+
+Premièrement dans l'onglet Reponse type nous choisissons le type de filtre que nous voulons, nous choisissons Lowpass pour dire que nous voulons un filtre passe-bas. Deuxièmement, dans l'onglet Desing Method nous choisissant la méthode que nous voulant, dans ce cas nous choisissons IIR Butterworth. Troisièmes dans l'onglet Filter Order, nous choisissons l'ordre du filtre, donc nous cochons l'option Specify Order et rentrant l'ordre que nous voulons étant un ordre 2. Finalement, nous rentrant la fréquence de sortie ($F_s$) et la fréquence de coupure ($F_c$) dans l'onglet Frequecy Specifications, et nous cliquons sur le buton Design Filter pour créer le filtre. 
+
+Nous constatons aussi que lorsque notre filtre est créé nous pouvons voir le digramme de Bode de celui-ci, ainsi que son diagramme de phase et son gabarit. 
+
+L'image ci-dessous correspond au diagramme de Bode du filtre de passe-bas de Butterworth modifier :
+
+%imagen 
+%buttermod7
+
+L'image ci-dessous correspond au diagramme de phase du filtre de passe-bas de Butterworth modifier :
+
+%imagen 
+%buttermod8
+
+L'image ci-dessous correspond au gabarit du filtre de passe-bas de Butterworth modifier :
+
+
+%imagen 
+%buttermod9
+
+Maintenant que nous avons notre filtre de Butterworth avec une nouvelle fréquence de coupure, nous procédons aux filtrages des signaux. Pour cette partie nous choisissons de filtrer $40s$ de la chanson \textit{« Giant »} de \textit{« Calvin Harris »} et \textit{Rag'n'Bone Man}, avec une addition de 30\% de bruit banc, rose et rouge.
+
+Dans un premier temps, dans la ligne de code de Matlab, nous rentrant les lignes de codes suivantes :
+
+\[ \texttt{[y,f]=audioread('Giant.wav')}\]
+\[ \texttt{[yw,fw]=audioread('GW0,3.wav')}\]
+\[ \texttt{[yp,fp]=audioread('GP0,3.wav')}\]
+\[ \texttt{[yb,fb]=audioread('GB0,3.wav')}\]
+
+Ces lignes de codes font appel à la fonction \texttt{audioread} de Matlab qui permet la lecture de fichier audio en format $.wav$. La première ligne de code permet donc la lecture de la chanson originale sans bruit ajouté, la deuxième lis la chanson avec un ajout de 30\% de bruit blanc, la troisième et quatrième font de même mais avec 30\% de bruit rosa et 30\% de bruit rouge respectivement.
+
+Puis, nous revenons sur l'outil \texttt{sptool}, et nous importons les signaux. Pour cela nous allons sur l'onglet \texttt{File}, en haut à gauche, nous cliquons dessous et nous choisissons l'option \texttt{Import...}. Lorsque nous cliquons dessous une nouvelle fenêtre s'ouvre (voir image ci-dessous).
+
+%imagen
+%buttermod10
+
+Lorsque nous aurons effectué la lecture des signaux, la nouvelle fenêtre ressemblera à celle ci-dessous :
+
+%imagen
+%buttermod11
+
+Maintenant, nous choisissons un des signaux entre les suivants : y, yw, yp, yb. Et nous cliquons sur la petite flèche qui sépare la colonne \texttt{Workspace Contents} et \texttt{Import As:}. Tout en bas nous changeons le nom du signal, dans la colonne \texttt{Name} et nous écrivons le nom \texttt{Original} (voir image ci-dessous) et nous cliquons sur le buton \texttt{OK}.
+
+%imagen
+%buttermod12
+
+Notre signal a été importer. Si nous cliquons sur le buton \texttt{View} de la colonne \texttt{Signals} en choisissant notre signal, nous observerons le spectre en fréquence du signal, comme le montre l'image ci-dessous.
+
+%imagen
+%buttermod13
+
+Ensuite nous allons appliquer notre filtre à ce signal. Pour cela, nous cliquons sur notre signal, puis sur notre filtre et nous cliquons sur le buton \texttt{Apply}. Celui fera filtrer le signal original para notre filtre de Butterworth. Après avoir cliqué sur \texttt{Apply} une fenêtre apparait qui nous permet de changer le nom du signal de sortie, comme le nombre l'image suivante:
+
+%imagen
+%buttermod14
+
+Nous choisissons de nommé le signal de sortie comme \texttt{originalf} pour dire qu'il s'agit du signal original filtré. Lorsque le signal a été créer une fenêtre avec le spectre en fréquence de ce nouveau signal apparait (voir image ci-dessous).
+
+%imagen
+%buttermod15
+
+\item \textbf{Remarque :} Nous pouvons déjà constate une différence entre le spectre en fréquence du signal original et le spectre en fréquence du signal filtré.
+
+A présent nous allons exporter le signal \texttt{originalf} afin de faire une comparaison entre celui-ci et le signal original, ce qui nous permettra de connaitre le pourcentage de bruit présent dans le signa de sortie suite au filtrage. 
+
+Dans un premier temps, pour exporter le signal, nous allons sur l'onglet \texttt{File} et nous choisissons l'option \texttt{Export...}. Lorsque nous cliquons sur cette option la fenêtre suivante nus apparait:
+
+%imagen
+%buttermod16
+
+Dans cette fenêtre nous choisissons ce que nous voulant exporter, dans notre cas nous choisissons le signal \texttt{originalf}, puis nous cliquons sur le buton \texttt{Export to Workspace}. Nous remarquons que sur le Workspace nous avons une nouvelle structure nommée \texttt{originalf}, comme le montre l'image ci-dessous.
+
+%imagen
+%buttermod17
+
+Sur la ligne de code de Matlab nous rentrant le code suivant pour savoir ce qui contient cette structure.
+
+\[\texttt{originalf}\]
+
+Matlab nous renvois l'information suivante:
+
+%imagen
+%buttermod18
+
+L'information qui nous intéresse de cette structure est la matrice de tipe \texttt{double} contenue dans la variable \texttt{data}. Nous allons donc créer une nouvelle variable nommée \texttt{yof} qui contiendra la matrice contenue en \texttt{data}. Nous rentrons alors la ligne de code suivante:
+
+\[\texttt{yof = originalf.data;}\]
+
+Sur le \texttt{Workspace} nous constatons l'apparition d'une nouvelle variable \texttt{yof} avec une \texttt{Value} de \texttt{1764000x2 double} correspondante a la matrix qui nous intéresse.
+
+Dans un deuxième temps, nous allons créer un fichier \texttt{.wav}. Pour cela nous allons faire appel à la fonction Matlab \texttt{audiowrite}, cette fonction reçoit comme paramètres le nom du fichier à créer, une matrice contenant l'information de du fichier audio et une fréquence. Sur la ligne de code Matlab nous rentrons donc la commande suivante:
+
+\[\texttt{audiowrite('Giant_filree.wav', yof, F}\]
+
+Nous remarquons qu'un nouveau fichier \texttt{.wav} a été créer sur notre dossier de travail. 
+
+\item \textbf{Remarque :} Nous effectuons le même procéder avec chaque fichier audio analysée, puis nous comparons les pourcentages de bruit en employant la même méthode que nous avons utilisé pour étudier l'efficacité de chaque filtre. 
+
+Troisièmement, nous allons étudier le pourcentage de bruit présent sur chaque signal contenant une addition de 30\% e bruit blanc, rose et rouge respectivement pour enfin sortir des conclusions concernant la modification faite. 
+
+Pour effectuer la comparaison des pourcentages de bruit présent en chaque signal, nous employant la même méthode que précédemment, les images ci-dessous correspond au script Matlab utilisé après avoir créé les fichiers audios corresponds aux sorties des signaux filtrés. 
+
+%imagen
+%buttermod19
+
+%imagen
+%buttermod20
+
+Lorsque nous cliquons sur le buton \texttt{Run} Matlab nous revoit 3 tableaux différents. 
+
+Dans le premiers tableau (voir tableau ci-dessous), nous pouvons les résultats du filtrage du de la chanson avec une addition de 30\% de bruit blanc. Nous constatons qu'il y a un phénomène d'annulation de bruit, cela arrive lorsque 2 fréquences opposé s'ajoutent ce qui explique le peu de bruit blanc qu'on trouve dans le signal son filtrage. Lorsque nous filtrant par le premier filtre de Butterworth utilisée ($F_c = 1000 Hz$), nous remarquant que le pourcentage de bruit diminue peu par rapport au pourcentage initial. D'un autre côté, le pourcentage de bruit présent dans le signal filtré par le deuxième filtre de Butterworth ($F_c = 200 Hz$) est bien plus petit que celui du premier filtre et du signal original. Nous pouvons donc dire que cette modification est convenable pour l'atténuation du bruit blanc.
+
+\begin{table}[hbt!]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
+    \hline
+    Sans méthode &  2.5361\\
+    Butterworth &  2.4582\\
+    Butterworth mod &  0.2574\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Blanc}
+    \label{table:t7}
+\end{table}
+
+Dans le deuxième tableau(voir tableau ci-dessous), nous pouvons les résultats du filtrage du de la chanson avec une addition de 30\% de bruit rose. Nous constatons que ce signal sans être filtré présente 34.855\% de bruit. Lorsque nous filtrant par le premier filtre de Butterworth utilisée ($F_c = 1000 Hz$), nous remarquant que le pourcentage de bruit diminue considérablement par rapport au pourcentage initial jusqu'á atteindre un pourcentage de bruit de 18.575\%. D'un autre côté, le pourcentage de bruit présent dans le signal filtré par le deuxième filtre de Butterworth ($F_c = 200Hz$) est bien plus grand que celui du premier filtre, mais plus petit que celui du signal orignal. Cette augmentation du pourcentage de bruit est dû au fait que le bruit rouge n'est pas un bruit avec des fréquence uniformes comme le bruit blanc, il est un brui décroisant, donc il y a des fréquences qui ne sont pas filtre ou ne sont pas bien filtre. De plus, on peut croire qu'il y a un nouveau bruit qui s'ajoute au signal mais cela reste une simple hypothèse à confirmer. Nous pouvons donc dire que cette modification n'est pas convenable pour l'atténuation du bruit rose si nous le comparant avec l'efficacité d'atténuation du premier filtre de Butterworth.
+
+\begin{table}[hbt!]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Rose (30\%)} \\
+    \hline
+    Sans méthode &  34.8551\\
+    Butterworth &  18.575\\
+    Butterworth mod &  24.663\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Rose}
+    \label{table:t7}
+\end{table}
+
+Dans le troisième tableau(voir tableau ci-dessous), nous pouvons les résultats du filtrage du de la chanson avec une addition de 30\% de bruit rouge. Nous constatons que ce signal sans être filtré pressente 35.874\% de bruit. Lorsque nous filtrant par le premier filtre de Butterworth utilisée ($F_c = 1000 Hz$), nous remarquant que le pourcentage de bruit diminue considérablement par rapport au pourcentage initial jusqu'á atteindre un pourcentage de bruit de 19.934\%. D'un autre côté, le pourcentage de bruit présent dans le signal filtré par le deuxième filtre de Butterworth ($F_c = 200 Hz$) est bien plus grand que celui du premier filtre, mais plus petit que celui du signal orignal. Cette augmentation du pourcentage de bruit est dû au fait que le bruit rouge n'est pas un bruit avec des fréquence uniformes comme le bruit blanc, il est un brui décroisant, donc il y a des fréquences qui ne sont pas filtre ou ne sont pas bien filtre. De plus, on peut croire qu'il y a un nouveau bruit qui s'ajoute au signal mais cela reste une simple hypothèse à confirmer. Nous pouvons donc dire que cette modification n'est pas convenable pour l'atténuation du bruit rouge si nous le comparant avec l'efficacité d'atténuation du premier filtre de Butterworth.
+
+
+\begin{table}[hbt!]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Rouge (30\%)} \\
+    \hline
+    Sans méthode &  35.874\\
+    Butterworth &  19.935\\
+    Butterworth mod &  24.363\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Rouge}
+    \label{table:t7}
+\end{table}
+
+\subsubsection{Conclusion}
+La modification du filtre passe-bas de Butterworth peut être tenue en compte lorsque nous voulant filtrer un fichier audio contenant du bruit blanc. Nous avons pu constater comment le pourcentage de bruit diminuer fortement lorsque nous filtrant une chanson avec une addition de 30\% de bruit blanc. Or cette modification ne doit pas être tenue en compte lorsque nous filtrant du bruit Rose ou du bruit Rouge, parce que, comme nous avons pu le constater, cette modification entraine une augmentation du pourcentage de bruit après filtrage, le pourcentage de bruit est en effet diminué mais il est considérablement plus important que lorsque que nous filtrant le même signal avec le premier filtre de Butterworth.
+
 \subsection{\textbf{Wiener modifiée}}
 
 \subsection{\textbf{RNNbruit modifiée}}
+Comme nous avons étudiés précédemment, la méthode RRNbruit a était inventer pour être employé avec des enregistrements audio. Mais lorsque nous sortons du contexte habituel et nous l’employant pour l’atténuation du bruit aléatoire (par exemple l’atténuation du bruit blanc, du bruit rose et du bruit rouge) présent dans des enregistrements sonores tels que des chansons, nous nous attendrons à avoir un comportement différent à celui que la méthode a lorsqu’elle employé dans son domaine. Pour réaliser cette étude, nous analyserons $40s$ de la chanson \textit{« Giant »} de \textit{« Calvin Harris »} et \textit{Rag'n'Bone Man}, avec une addition de 30\% de bruit banc, rose et rouge. Nous avons utilisé le software Matlab R2020a et tous les enregistrements audios on était traiter sous le format \texttt{.wav}.
 
+Nous avons filtré les enregistrements audios avec la méthode RRNbruit et nous constatons que les résultats obtenus sont de très mauvaise qualité. Ces résultats étaient prévisibles. Le fonctionnement de la méthode atténué le signal sonore correspondant à la chanson de façon que ce dernier reste méconnaissable, c’est-à-dire que cette méthode a réduit le bruit mais aussi une partie importante de la chanson originale, qui se traduit par une perte d’information. C’est pour cela que nous proposons une modification de la méthode que nous avons nommé RRNbruit modifiée.
+
+
+Cette modification prend comme entrées les enregistrements audios qui sont les entrées de la méthode RNNbruit mais aussi elle prend comme entrée les sorties filtrées de la méthode RNNbruit, et donne en sortie des nouveaux enregistrements audios filtrées, c’est-à-dire avec une atténuation du bruit considérable. 
+
+\item \textbf{Remarque :} La lecture d’enregistrements audios sur Matlab se fait avec la fonction \texttt{audioread('audio.wav')}, et qui a comme sorties :
+
+
+\[ \texttt{[y,f]=audioread('audio.wav')}\]
+
+Donde $y$ es una matriz de $m$ filas y $n$ columnas, y $f$ es la frecuencia de muestreo del audio. El número de filas $m$ está determinado por $m=f*duracion$, es decir que en nuestro caso se tomó $40s$ de la canción que está a una frecuencia de muestreo $f=44100Hz$ entonces $m=44100*40=1764000$. El número de columnas $n$ está determinado por el número de canales utilizados por el audio, es decir, $1$ para Mono y $2$ para Stereo. En nuestro caso, la canción está en Stero entonces $m=2$. Entonces nuestro audio para Matlab es la matriz $y_{17640000,2}$ con $f=44100Hz$. Por esta razón cuando se hable de matrices de ahora en adelante se estará refiriendo a los audios.
+
+El método o la modificación RNNbruit mod consta de las etápas:
+
+\begin{enumerate} % Lista
+    \item \textbf{Redemiensión}: se toman las matrices de entrada del método RNNbruit y se recortan para que tengan el mismo número de filas que las matrices de salida del método RNNbruit.
+    
+    \item \textbf{Creación de matrices}: se toma cada matriz de entrada con su respectiva matriz filtrada por RNNbruit y se calcula la distancia media entre cada par de elementos de ellas. Esto se almacena, en cada caso, en una nueva matriz.
+    
+    \item \textbf{Reescalamiento}: como la anterior operación pudo haber generado valores que se salen del intervalo $[-1,1]$, se realiza una operación de reescalamiento a este intervalo.  
+    
+    \item \textbf{Filtro pasa bajas}: finalmente, se implementa un filtro pasa bajas hasta la frecuencia de $10kHz$ utilizando la función \texttt{lowpass(y,10000,f)} que tiene como salida un nuevo audio filtrado.
+
+\end{enumerate}
+
+Los resultados de la implementación descrita anteriormente, se observan en las tablas a continuación. Para el caso del ruido blanco, se agregó 30\% de este y se utilizaron los dos métodos de filtrado: RNNbruit y RNNbruit mod; los resultados se muestran en la tabla \ref{table:t7}.
+
+\begin{table}[hbt!]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
+    \hline
+    Sans méthode &  88.831\\
+    RNNbruit &  99.985\\
+    RNNbruit mod &  82.555\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Blanc}
+    \label{table:t7}
+\end{table}
+
+Se observa que el porcentaje de ruido del método RNNbruit es muy grande, lo cual se confirma al escuchar el audio y notar que la canción prácticamente ha sido removida. Mientras que el método RNNbruit mod logra reducir el ruido y el audio sigue siendo reconocible al escucharlo.
+
+Para el caso del ruido rosa, se agregó 30\% de este y se utilizaron los dos métodos de filtrado: RNNbruit y RNNbruit mod; los resultados se muestran en la tabla \ref{table:t8}.
+\clearpage
+
+\begin{table}[hbt!]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Rose (30\%)} \\
+    \hline
+    Sans méthode &  87.198\\
+    RNNbruit &  362.83\\
+    RNNbruit mod &  55.151\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Rose}
+    \label{table:t8}
+\end{table}
+
+Se observa que el porcentaje de ruido del método RNNbruit es muy grande, lo cual se confirma al escuchar el audio y notar que la canción prácticamente ha sido removida. Mientras que el método RNNbruit mod logra reducir el ruido significativamente y el audio sigue siendo reconocible al escucharlo.
+Para el caso del ruido café, se agregó 30\% de este y se utilizaron los dos métodos de filtrado: RNNbruit y RNNbruit mod; los resultados se muestran en la tabla \ref{table:t9} 
+
+\begin{table}[hbt!]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Marron (30\%)} \\
+    \hline
+    Sans méthode &  94.063\\
+    RNNbruit &  362.76\\
+    RNNbruit mod &  56.702\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Marron}
+    \label{table:t9}
+\end{table}
+
+Se observa que el porcentaje de ruido del método RNNbruit es muy grande, lo cual se confirma al escuchar el audio y notar que la canción prácticamente ha sido removida. Mientras que el método RNNbruit mod logra reducir el ruido significativamente y el audio sigue siendo reconocible al escucharlo.
 
 \end{document}
