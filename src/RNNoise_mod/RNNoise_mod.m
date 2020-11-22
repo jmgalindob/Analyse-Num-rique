@@ -1,5 +1,4 @@
-% Métodos modificados
-
+% RNNoise vs RNNoise_mod para canciones
 % Lectura de los audios
 [y,F] = audioread('Giant.wav');
 w = audioread('White.wav');
@@ -121,4 +120,5 @@ display(T2)
 % Tabla ruido café
 T3 = table(qB'*100, 'VariableNames',{'Marron (30%)'},'RowNames', Methods);
 display(T3)
+
 
