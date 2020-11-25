@@ -14,18 +14,20 @@
 \usepackage{biblatex}
 \usepackage{ragged2e}
 \usepackage{geometry}
+\usepackage{csquotes}
 \geometry{
    hmargin=3cm,
    vmargin=2cm,
    includeheadfoot
 }
+\DeclareMathOperator{\sinc}{sinc}
 
 \pagestyle{plain}
 
 % Inicio del documento
 \begin{document}
 
-\title{Atténuation du bruit dans des signaux audios a travers l’implémentation de méthodes classiques et une méthode hybride\\
+\title{Atténuation du bruit dans les enregistrements audio en implémentant deux méthodes classiques et une méthode hybride \\
 }
 
 \author{\IEEEauthorblockN{1\textsuperscript{st} José Miguel Galindo Barco}
@@ -56,15 +58,16 @@
 L’atténuation du bruit est un domaine d’étude actif dans des milieux comme le traitement digital et analogique des signaux. Dans ce domaine il existe une grande variété d’algorithmes et/ou méthodes classiques et modernes qui sont utilisé dans ce but. Dans ce travail de recherche, nous réaliserons une étude théorique du filtre analogique passe-bas avec une approximation de Butterworth, le filtre de Weiner et la méthode dite hybride de DSP/Deep Learning RNNbruit. Puis nous développerons une analyse de ces trois méthodes où nous comparerons les résultats de signaux lorsque nous filtrons un signal propre, un signal avec addition de bruit blanc, un signal avec addition de bruit rosa et un signal avec addition de bruit rouge. Les enregistrement audios résultant de chaque méthode filtrage seront comparer qualitativement et quantitativement, d’où la nécessité de tenir en compte la perception auditive du récepteur. Finalement, nous proposerons des modifications sur la mise en œuvre ou implémentation de ces méthodes en considérant le contexte et le bon fonctionnement dans ce dernier. 
 \end{abstract}
 
-\section{Introduction}
 
+\section{Introduction}
+De nos jours, de plus en plus de personnes envoies des enregistrements audios en tant que message pour communiquer avec un destinataire sur un certain réseau sociaux. Ceux où on fait le plus appel à cette utilisation ou à ce nouveau type de message sont WhatsApp, Messenger Facebook ou encore Instagram. Ce type de message nous permet, aujourd’hui, de réduire la longueur des messages ou de transmettre une information de manière efficace et précise. Or, avec type de messagerie, nous trouvons un très grand problème qui se résume à la présence de bruit qui entraine une perte importante d’information, de temps et d’énergie. En effet, le bruit est un phénomène physique qui perturbe la propagation des ondes, et par conséquent, entraine la perte d’information présente dans ces ondes. Pour éliminer ce bruit et réduire au plus la perte d’information, il existe plusieurs méthodes, dites de filtrage, qui permet cela. Cependant, ces méthodes ne sont pas toujours adaptées à des enregistrements audios, telles que les messages audios qu’on envois sur les réseaux sociaux. Elles sont plus adaptées à l’atténuation du bruit dans d’autre situation. Pour notre problématique, il existe déjà des méthodes qui permettent d’éliminer ou atténuer certains types de bruit comme les bruits industriels, qui peuvent être attenue avec un processus d’addition de fréquences ou tout simplement, lorsqu’un individue veut envoyer un message audio et il y a trop de bruit extérieur qui peut brouiller le message, il attend que le bruit diminue pour enregistrer son message. Mais des méthodes qui permettent d’atténuer des bruits avec des fréquences variantes, comme les bruits colorés, ne sont pas encore au point ou en existe très peu. C’est pour cela que dans ce Paper nous cherchant employant deux techniques classiques elles que le filtre passe-bas avec un approximation de Butterworth et le filtre de Weiner, ainsi qu’une méthode dite hydrique comme la méthode RRNbruit développer par Mozilla Corporation, dans le but de trouver la plus adapter à l’atténuation d’un certain bruit colorée. Mais aussi dans le but de les modifié pour les rendre plus efficace (ou moins efficace dans le pire de cas).
 
 \section{Concepts fondamentaux}
 
 \begin{itemize} % Lista
-    \item[] \textbf{Signal}: un signal est la representation physique de l'information, qu'il convoit de sa source a sa destination.
+    \item[] \textbf{Signal}: un signal est la représentation physique de l'information, qu'il convoi de sa source a sa destination.
 
-    \item[] \textbf{Bruit}: Un bruit correspond a tout phénomène gênant la transmission ou l'interpretation d'un signal
+    \item[] \textbf{Bruit}: Un bruit correspond à tout phénomène gênant la transmission ou l'interprétation d'un signal
 
     \item[] \textbf{Traitement du signal}: Le traitement du signal est une discipline qui étudie des méthodes de traitement, d’analyse et d’interprétation des signaux. Pour cela, dans ce domaine on utilise des méthodes tels que le contrôle, le filtrage, la compression et la transmission de données, la réduction du bruit, la déconvolution, la prédiction, l'identification, la classification.  
 
@@ -76,9 +79,9 @@ Le son ou signal sonore est une perturbation mécanique d’un état d’équili
 
 Dans un premier temps, en s’appuyant sur le point de vue physique, les ondes sonores se propage à travers l’air ou autres milieux (solides et élastiques) sous forme de longueur d’ondes, où la vibration mécanique qui décrit l’onde se propage dans la même direction que la propagation de celle-ci. L’air peut être compris comme un milieu élastique sur lequel les particules, ou tout simplement les couches d’air, ont un comportement semblable à un ressort, c’est-à-dire qu’elles “se poussent” et “s’attirent” les unes avec les autres. 
 
-Plus clairement, une onde sonore est une variation periodique ou sinusoidale de la pression d’un milieu pendant un temps precis dans un endroit precis. 
+Plus clairement, une onde sonore est une variation périodique ou sinusoïdale de la pression d’un milieu pendant un temps précis dans un endroit précis. 
 
-Dans la figure ci-dessous, dans un premier temps nous pouvons voir l’air dans son equilibre (figure xA), le variations dans l’air lorsqu’une onde sonore pure se deplace dans ce milieux (figure xB) et l’allure de  l’onde qui se déplace dans l’air.
+Dans la figure ci-dessous, dans un premier temps nous pouvons voir l’air dans son équilibre (figure xA), le variations dans l’air lorsqu’une onde sonore pure se déplace dans ce milieux (figure xB) et l’allure de  l’onde qui se déplace dans l’air.
 
 % Imagen
 \begin{figure}[H]
@@ -170,16 +173,25 @@ Le décibel ($dB$) est une unité utilisée pour mesurer l'intensité des sons e
 
 Afin de donner une définition plus précise d’une tonalité pure, nous devons nous appuyer sur la définition donnée en psychoacoustique. En effet, en psychoacoustique, une tonalité pure, ou encore son pur ou note pure (en anglais : pure tone) est un son avec une forme d'onde sinusoïdale ; c'est-à-dire une onde sinusoïdale de n'importe quelle fréquence, phase et amplitude. En audiologie clinique, les tons purs sont utilisés pour l'audiométrie tonale (en) afin de caractériser les seuils d'audition à différentes fréquences. 
 
-\subsection{Descomposición del sonido en tonos puros}
-Proprement dit, toute onde sonore resulte de l’addtion de plusieurs tonalité pure de frequence differente. La quantite de 
+\subsection{Décomposition du son en tonalités propres}
+Proprement dit, toute onde sonore résulte de l’addition de plusieurs tonalité pure de fréquence différente. La quantité de fréquence requise pour former le son $f$ correspond au contenue fréquentielle de $f$. N’importe lequel son peut être reconstruit en partant de son contenue fréquentielle. 
 
-Formalmente, cualquier sonido $f$ es una suma de tonos puros a diferentes frecuencias. La cantidad de cada frecuencia requerida para formar el sonido $f$ es el contenido frecuencial de $f$. Cualquier sonido puede ser reconstruido partiendo de su contenido frecuencial.
+Une implémentation de ce qui est dit précédemment, n’importe-lequel son peut être considéré comme une fonction, peut être représenté par la somme de tonalités pures ou fonctions sinusoïdales, ce n’est pas une surprise que ça ait un lien avec le concept mathématique des Séries de Fourier. 
 
-Una implicación de lo anterior es que, en general, cualquier sonido puede ser considerado como una función, y por más complejo que sea el sonido, puede ser representado por la suma de tonos puros o funciones sinusoidales (senos y cosenos) lo cual no es sorpresa que esté relacionado con el concepto matemático de series de Fourier. 
+De plus, ce qu’on a vue précédemment implique aussi que le son $f$ peut être enregistrer en enregistrant tout simplement son contenue spectral.
 
-Adicionalmente, lo anterior también implica que el sonido $f$ puede ser almacenado al guardar simplemente su contenido frecuencial, como una alternativa de guardar a $f$ como tal.
+\textbf{Remarque :} La série de Fourier  correspondante a une fonction $f(x)$ est définie par :
+\begin{equation}
+\frac{a_0}{2} + \sum_{n=1}^{\infty}(a_n\cos{\frac{nx\pi}{L}} + b_n\sin{\frac{nx\pi}{L}})
+\end{equation}
+Où les coefficients $a_n$ et $b_n$ sont appelés coefficients de Fourier et sont définies par :
+\begin{equation}
+    a_n = \frac{1}{L} \int_{-L}^{L}f(x)cos(\frac{nx\pi}{L})dx,\;
+    b_n = \frac{1}{L} \int_{-L}^{L}f(x)sin(\frac{nx\pi}{L})dx
+\end{equation}
 
-\subsection{Espectro del sonido}
+
+\subsection{Spectre en fréquences}
 Le spectre en fréquences montre les différentes fréquences présentes dans un son, c’est-à-dire, il montre le contenue fréquentiel qui caractérise le son et avec l’amplitude correspondante à chaque fréquence. Usuellement, il est présenté comme un graphique où on compare la fréquence avec l’intensité, la pression ou la puissance en $dB$. Il faut remarquer que la fréquence dominante (avec une amplitude plus grande que les autres) est connue comme fréquence fondamentale et le reste est connue comme harmoniques. Sur l’image ci-dessous, on peut observer le spectre en fréquence d’une flute qui joue la note G4 équivalente, approximativement, a une fréquence de $400 Hz$. Il est important de remarquer que la fréquence fondamentale c’est celle qui a la plus grande amplitude, les autres ce sont des harmoniques. Si on étudiait cette note dans un autres instrument musical, on obtiendra le même spectre en fréquence avec la même fréquence fondamentale , mais les harmoniques seraient différents. Cette dernière caractéristique explique pourquoi les êtres humains on perçoit chaque instrument d’une façon différente lorsqu’on joue une même note. Cette perception auditive est connue sous le nom de \underline{timbre}.
 
 % Imagen
@@ -199,15 +211,32 @@ Le théorème de l'échantillonnage de Shannon, qui permet de savoir à quelle f
 
 Soit $u(t)$ une fonction représentant un signal continu. On considère un échantillonnage périodique défini par : 
 
-où $k$ est un entier. Te est la période d'échantillonnage. $f_e=1/T_e$ est la fréquence d'échantillonnage. 
+\begin{equation}
+    t_k = kT_e
+    u_k = u(t_k)
+\end{equation}
+
+Où $k$ est un entier. $T_e$ est la période d'échantillonnage. $f_e=1/T_e$ est la fréquence d'échantillonnage. 
 
 Le théorème de Shannon ([1]) concerne les signaux dont le spectre possède une fréquence maximale $f_{max}$, que l'on appelle des signaux à bande limitée. Par exemple, si $u(t)$ est un polynôme trigonométrique, la fréquence maximale est celle de la plus grande harmonique.
 
 \textbf{Théorème de Shannon} : pour que le signal puisse être entièrement reconstruit à partir des échantillons, il faut et il suffit que : 
 
+\begin{equation}
+    f_e > 2f_max
+\end{equation}
+
 La fréquence d'échantillonnage doit être strictement supérieure à deux fois la plus grande fréquence présente dans le spectre du signal continu (condition de Nyquist-Shannon). Si cette condition est vérifiée alors : 
 
-où la fonction sinus cardinale est définie par : 
+\begin{equation}
+    u(t) = \sum_{k = -\infty}^{+\infty} u_k\sinc({\frac{t-kT_e}{T_e}})
+\end{equation}
+
+Où la fonction sinus cardinale est définie par : 
+
+\begin{equation}
+    \sinc{x} = \frac{\sin{(x\pi)}}{x\pi}
+\end{equation}
 
 Cette relation montre que le signal peut être reconstruit à partir des échantillons, ce qui signifie que toute l'information présente dans le signal original est conservée dans les échantillons. Nous verrons plus loin comment l'opération de reconstruction est effectuée en pratique. 
 
@@ -226,7 +255,7 @@ Dans la figure ci-dessous, on peut observer l’effet de la quantification de l�
  \begin{figure}[H]
  \centering
     \includegraphics[scale=1]{img5.png}
-    \caption{Cuantización de un sonido (audio análogo) y la influencia de la frecuencia de muestreo (Sample Rate) y la profundidad de bit (Bit Depth). Observe que entre mayor sean estos parámetros, mayor será el error cometido en la cuantización.}
+    \caption{Quantification du son (audio analogique), influence de la fréquence d’échantillonnage (Sample Rate) et de la profondeur en couleur (Bit Depth). On observe que plus les paramètres sont grands, plus l’erreur sera grande.}
 \end{figure}
 
 Comme on peut voir dans la figure ci-dessus, la fréquence d'échantillonnage et la profondeur de couleur jouent un rôle fondamental dans la détermination de la qualité de l'audio résultant.
@@ -248,19 +277,20 @@ Pour qu’un ordinateur soit capable de reproduit un son digital, il faut que le
 \begin{itemize} % Lista
 
     \item[-] \textbf{formats avec des pertes} \textit{(lossy)}:  il s’agit de formats qui compressent le fichier original en éliminant des parties de celui-ci en suivant un algorithme de compression spécifique. De ce fait, lorsqu’on décompresse le fichier, on n’obtient pas le fichier original. Certains d’entre eux sont: \texttt{MP3, Opus, Vorbis, WMA,} etc.
-    \item[-] \textbf{Formats sans pertes} \textit{(lossless)}: il s’agit der format qui compresse le fichier original en organisant l’information efficacement. De ce fait, lorsqu’on décompresse le fichier on obtient l’original. Certains d’entre eux sont : \texttt{FLAC, APE, WV, ALAC,} etc.
+    \item[-] \textbf{Formats sans pertes} \textit{(lossless)}: il s’agit du format qui compresse le fichier original en organisant l’information efficacement. De ce fait, lorsqu’on décompresse le fichier on obtient l’original. Certains d’entre eux sont : \texttt{FLAC, APE, WV, ALAC,} etc.
 
 \end{itemize}
 
 \subsection{Audio en Matlab}
-En Matlab la lectura de audios se realiza con la función:
+
+Sur Matlab la lecture des audios se fait avec la fonction suivante :
 \[\texttt{[y,Fs] = audioread('name.wav')}\]
-Donde
+Où
 \begin{itemize}
-    \item[] $\texttt{y}$ es una matriz de $m$ filas y $n$ columnas donde $m=f*$\textit{durée} y $n$ depende del número de canales del audio (1 para mono, 2 para estereo). Los valores almacenados están en el intervalo $[-1,1]$ correspondiendo a la representación de un audio en el computador.
-    \item[] $\texttt{Fs}$ es la frecuencia de muestreo del audio
+    \item[] $\texttt{y}$ est une matrice de $m$ lignes et $n$ colonnes où $m=f*$\textit{durée} et $n$ est le nombres de canals de l’audio (avec 1 pour monophonique et 2 pour stéréophonique). Les valeurs enregistrer dans l’intervalle $[-1,1]$ correspondent a la representation de l’audio sur l’ordinateur. 
+    \item[] $\texttt{Fs}$  est la fréquence d’échantillonnage de l’audio.
 \end{itemize}
-En Matlab la escritura de audios se realiza con la función:
+Sur Matlab l’écriture des audios se fait avec la fonction suivante :
 \[\texttt{audiwrite('name.wav',y,Fs)}\]
 
 \subsection{Bruit et types de bruit}
@@ -272,12 +302,12 @@ Dans un premier temps, en regardant les bruits naturels nous pouvons nous rendre
     \begin{figure}[H]
         \centering
         \includegraphics[scale=0.5]{img6.png}
-        \caption{Spectre en frequence du bruit blanc généré sur Matlab R2020a.}
+        \caption{Spectre en fréquence du bruit blanc généré sur Matlab R2020a.}
     \end{figure}
     
 \begin{itemize} % Lista
 
-    \item[-] \textbf{Le bruit rouge ou brownien} correspond dans une première approximation, dans les domaines qui utilisent des définitions précises, la terminologie « bruit rouge », « bruit brownien » ou « bruit brun » fait référence au son ayant une puissance sonore qui décroît de 6 dB par octave lorsque la fréquence augmente (densité proportionnelle à 1/f ) sur un intervalle de fréquence n'incluant pas de DC (Qui dans un sens général, n'inclut pas de composante constante, ou de valeur pour f=0). 
+    \item[-] \textbf{Le bruit rouge ou brownien} correspond dans une première approximation, dans les domaines qui utilisent des définitions précises, la terminologie « bruit rouge », « bruit brownien » ou « bruit brun » fait référence au son ayant une puissance sonore qui décroît de 6 dB par octave lorsque la fréquence augmente (densité proportionnelle à $1/f$ ) sur un intervalle de fréquence n'incluant pas de DC (Qui dans un sens général, n'inclut pas de composante constante, ou de valeur pour $f=0$). 
 
     % Imagen
     \begin{figure}[H]
@@ -286,7 +316,7 @@ Dans un premier temps, en regardant les bruits naturels nous pouvons nous rendre
         \caption{Spectre en fréquence du bruit rouge (-$6dB$/Octave) généré sur Matlab R2020a.}
     \end{figure}
 
-    D’un autre point de vue, dans les domaines qui utilisent des définitions plus approximatives, le « bruit rouge » correspond à tout son dont la densité de puissance diminue lorsque la fréquence augmente3. 
+    D’un autre point de vue, dans les domaines qui utilisent des définitions plus approximatives, le « bruit rouge » correspond à tout son dont la densité de puissance diminue lorsque la fréquence augmente. 
 
     Plus exactement Le bruit rouge, peut être obtenu en utilisant un algorithme simulant le mouvement brownien ou par intégration mathématique du bruit blanc.
     
@@ -294,7 +324,7 @@ Dans un premier temps, en regardant les bruits naturels nous pouvons nous rendre
 
     Or, l’appareil auditif humain est souvent étudié dans un espace logarithmique. En effet, l’oreille humaine ne perçoit les sons que sur des bandes de largeurs proportionnelles : un doublement de fréquence sera perçu en termes de puissance sonore de la même façon, quelle que soit la fréquence de départ. Ainsi, en musique, on a défini les octaves : une octave correspond à un doublement de fréquence et est perçu comme contenant la même puissance sonore. C’est pourquoi le bruit rose est souvent utilisé comme signal de référence en ingénierie du son.
     
-    D’autre part, sur les diagrammes de spectres sonores, on voit que la densité de puissance sonore du bruit rose, comparée à celle du bruit blanc, diminue de 3 dB par octave : la densité de puissance sonore est proportionnelle à $1/F$ (où $F$ est la fréquence). C’est pour cela que le bruit rose est souvent appelé « bruit $1/F$ ».
+    D’autre part, sur les diagrammes de spectres sonores, on voit que la densité de puissance sonore du bruit rose, comparée à celle du bruit blanc, diminue de $3dB$ par octave : la densité de puissance sonore est proportionnelle à $1/F$ (où $F$ est la fréquence). C’est pour cela que le bruit rose est souvent appelé « bruit $1/F$ ».
     
     % Imagen
     \begin{figure}[H]
@@ -303,11 +333,11 @@ Dans un premier temps, en regardant les bruits naturels nous pouvons nous rendre
         \caption{Spectre en fréquence du bruit rose (-$3dB$/Octave) généré su Matlab R2020a.}
     \end{figure}
 
-    \item[-] \textbf{Le bruit bleu} qui correspond à un bruit qui augmente sa puissance sonore de 3 dB par octave lorsque la fréquence augmente (densité proportionnelle à f), et ce jusqu’à une fréquence infinie. 
+    \item[-] \textbf{Le bruit bleu} qui correspond à un bruit qui augmente sa puissance sonore de $3dB$ par octave lorsque la fréquence augmente (densité proportionnelle à $f$), et ce jusqu’à une fréquence infinie. 
 
     Dans le domaine de l’informatique graphique, le terme « bruit bleu » est parfois utilisé d’une façon plus approximative pour décrire tout son de puissance sonore minimale à basse fréquence et ne présentant aucun pic lorsque la fréquence augmente (croissance constante). 
 
-    Il est convenable de connaitre et différencier aussi le bruit rose des autres types de bruits coloré, dans la mesure que ce type de bruit fait partie de notre étude. Donc le bruit rose, ce type de bruit est caractérisé par une puissance égale sur des bandes proportionnelles en largeur. Une bande correspond en fait à un changement de fréquence (hausse ou baisse à exprimer en pourcentage de l’une des extrémités de l’intervalle). Par exemple, la puissance d’un bruit rose est la même sur les intervalles allant de 40 à 60 Hz et de 4000 à 6000 Hz car ces intervalles sont proportionnels (ils correspondent à une hausse de 50 pourcent de la fréquence). 
+    Il est convenable de connaitre et différencier aussi le bruit rose des autres types de bruits coloré, dans la mesure que ce type de bruit fait partie de notre étude. Donc le bruit rose, ce type de bruit est caractérisé par une puissance égale sur des bandes proportionnelles en largeur. Une bande correspond en fait à un changement de fréquence (hausse ou baisse à exprimer en pourcentage de l’une des extrémités de l’intervalle). Par exemple, la puissance d’un bruit rose est la même sur les intervalles allant de $40$ à $60Hz$ et de $4000$ à $6000Hz$ car ces intervalles sont proportionnels (ils correspondent à une hausse de 50 pourcent de la fréquence). 
 
 \end{itemize}
 \hfill
@@ -334,11 +364,11 @@ bruits comme les suivants :
 
 \newpage
 \section{Méthodes}
-Le but de ce projet est de implementer le filtrage dans les notes audios dans l'objectif d'attenuer le bruit present. Pour cela nous allons implementé le filtrage analogique avec une approximation de Butterworth, la méthode RNN et un autre qui reste définir.
+Le but de ce projet est d’implémenter le filtrage dans les notes audios dans l'objectif d'atténuer le bruit présent. Pour cela nous allons implémenter le filtrage analogique avec une approximation de Butterworth, la méthode RNN et un autre qui reste définir.
 
 \subsection{\textbf{Filtre de Butterworth}}
 
-\subsubsection{definition du filtrage}
+\subsubsection{définition du filtrage}
 \medskip
 Le filtrage est une forme de traitement de signal, obtenu en envoyant le signal à travers un ensemble de circuits électroniques, qui modifient son spectre de fréquence et/ou sa phase et donc sa forme temporelle. Il peut s‘agir soit : 
 
@@ -348,7 +378,7 @@ Le filtrage est une forme de traitement de signal, obtenu en envoyant le signal 
     \item[-] d’isoler dans un signal complexe la ou les bandes de fréquences utiles. 
 \end{itemize}
 
-Il existe plusieurs types de filtres : passe-bas, passe-haut, passe-bande, coupe-bande, passe-tout. Dans notre étude, nous allons nous concentrer dans les filtres passe-bas.
+Il existe plusieurs types de filtres : passe-bas, passe-haut, passe-bande, coupe-bande, réjecteur de bande. Dans notre étude, nous allons nous concentrer dans les filtres passe-bas.
 
 \medskip
 \subsubsection{Filtre passe-bas}
@@ -358,14 +388,14 @@ Un filtre passe-bas peut être implémenté de façon analogique avec des compos
 \medskip
 
 \paragraph{Filtre passe-bas du premier ordre}
-Un filtre passe-bas du premier ordre est caractérisé par sa fréquence de coupure $f(c)$.  La fonction de transfert du filtre est obtenue en dénormalisant le filtre passe-bas normalisé en en remplaçant $\omega_n$ par $\omega$ $\omega_c$,
-ce qui donne la fonction de transfert suivante :
+Un filtre passe-bas du premier ordre est caractérisé par sa fréquence de coupure $f(c)$.  La fonction de transfert du filtre est obtenue en dénormalisant le filtre passe-bas normalisé en en remplaçant $\omega_n$ par $\omega$, $\omega_c$,
+Ce qui donne la fonction de transfert suivante :
 
 \begin{equation}
     H(j\omega)= \frac{v_o}{v_i} = \frac{K}{1+j\frac{\omega}{\omega_c}}
 \end{equation}
 
-où
+Où
 \begin{itemize}
     \item[] $v_i$ est le signal d'entrée
     \item[] $v_0$ est le signal de sortir
@@ -382,11 +412,11 @@ Le module et la phase de la fonction de transfert sont égaux à :
     \phi(\omega) = arg(H(j\omega)) = -arg(1 + j\frac{\omega}{\omega_c}) = \arctan(\frac{\omega}{\omega_c})
 \end{equation}
 
-Il y a plusieurs méthodes pour implémenter ce filtre. Une réalisation active et une réalisation passive sont ici présentées. K est le gain du filtre.
+Il y a plusieurs méthodes pour implémenter ce filtre. Une réalisation active et une réalisation passive sont ici présentées. $K$ est le gain du filtre.
 
 \paragraph{Circuit actif}
 \hfill\\
-Il est  possible de réaliser un filtre passe-bas avec un circuit actif. Cette option permet d'ajouter du gain au signal de sortie, c'est-à-dire d'obtenir une amplitude supérieure à 0 dB dans la bande passante. Plusieurs configurations permettent d'implémenter ce genre de filtre.
+Il est  possible de réaliser un filtre passe-bas avec un circuit actif. Cette option permet d'ajouter du gain au signal de sortie, c'est-à-dire d'obtenir une amplitude supérieure à $0dB$ dans la bande passante. Plusieurs configurations permettent d'implémenter ce genre de filtre.
 
 %imagen
  \begin{figure}[H]
@@ -399,7 +429,12 @@ Un filtre passe-bas actif
 Dans la configuration présentée ici, la fréquence de coupure se définit comme suit :
 
 \begin{equation}
-    f_c = \frac{1}{2\pi R_2C} ou  \omega_c = \frac{1}{R_2 C}
+    f_c = \frac{1}{2\pi R_2C} 
+\end{equation}
+
+Où  
+\begin{equation}
+    \omega_c = \frac{1}{R_2 C}
 \end{equation}
 
 En utilisant les propriétés des amplificateurs opérationnels, et les impédances des éléments, on obtient la fonction de transfert suivante :
@@ -408,26 +443,26 @@ En utilisant les propriétés des amplificateurs opérationnels, et les impédan
     H(j\omega)= \frac{v_o}{v_i} = \frac{-R_2}{R_1} \cdot \frac{1}{1 + jR_2 C\omega}
 \end{equation}
 
-En basse fréquence, le condensateur agit comme un circuit ouvert, ce qui est confirmé par le fait que le terme de droite de l'équation précédente tend vers 1. La formule simplifiée ainsi obtenue nous donne le gain dans la bande passante :
+En basse fréquence, le condensateur agit comme un circuit ouvert, ce qui est confirmé par le fait que le terme de droite de l'équation précédente tend vers $1$. La formule simplifiée ainsi obtenue nous donne le gain dans la bande passante :
 
 \begin{equation}
     H(\omega)_{\omega \ll \omega_c}  = \frac{v_o}{v_i} = \frac{-R_2}{R_1}
 \end{equation}
 
 
-Avec la fonction de transfert, on peut démontrer que l'atténuation dans la bande rejetée est de 20 dB/décade ou de 6 dB par octave telle qu'attendu pour un filtre d'ordre 1.
+Avec la fonction de transfert, on peut démontrer que l'atténuation dans la bande rejetée est de $20 dB/$\textit{décade} ou de $6dB$ par octave telle qu'attendu pour un filtre d'ordre $1$.
 \medskip
 
 \paragraph{Filtre passe-bas du second ordre}
 \hfill\\
-Un filtre passe-bas du secon ordre est caractérisé par sa fréquence propre $f_0$ et par un facteur de qualité Q.  Il est représenté par la fonction de transfert suivante :
+Un filtre passe-bas du second ordre est caractérisé par sa fréquence propre $f_0$ et par un facteur de qualité $Q$.  Il est représenté par la fonction de transfert suivante :
 
 
 \begin{equation}
-    H(j\omega) = \frac{v_o}{v_i} = \frac{K}{1 - (\frac{\omega}{\omega_0})^2 + j\frac{(\frac{\omega}{\omega_0})}{Q}}
+    H(j\omega) = \frac{v_o}{v_i} = \frac{K}{1 - (\frac{\omega}{\omega_0})^2 + j\frac{(\omega/\omega_0)}{Q}}
 \end{equation}
 
-avec
+Avec
 \begin{itemize}
   \item[] $\omega =  2\pi f$
   \item[] $\omega_0 = 2\pi f_0$ 
@@ -437,11 +472,11 @@ avec
 Le module et la phase de la fonction de transfert sont donc donnés par:
 
 \begin{equation}
-    |H(j\omega)| = |\frac{v_o}{v_i}| = \frac{K}{\sqrt{(1 - (\frac{\omega}{\omega_0})^2)^2 + (\frac{(\frac{\omega}{\omega_0})}{Q})^2}}
+    |H(j\omega)| = |\frac{v_o}{v_i}| = \frac{K}{\sqrt{(1 - (\frac{\omega}{\omega_0})^2)^2 + (\frac{(\omega/\omega_0)}{Q})^2}}
 \end{equation}
 
 \begin{equation}
-    \phi(\omega) = -arctan(\frac{\frac{(\frac{\omega}{\omega_0})}{Q}}{1 - (\frac{\omega}{\omega_0})^2})
+    \phi(\omega) = -arctan\left(\frac{\frac{(\omega/\omega_0)}{Q}}{1 - (\omega/\omega_0)^2})\right)
 \end{equation}
 
 \subsubsection{Types de Filtres Analogiques Passe-bas}
@@ -453,13 +488,13 @@ Les filtres de Butterworth furent décrits pour la première fois par l'ingénie
 
 \begin{itemize}
   \item[-] \textbf{Caractéristiques}
-  Le gain d'un filtre de Butterworth est le plus constant possible dans la bande passante et tend vers 0 dans la bande de coupure. Sur un diagramme de Bode logarithmique, cette réponse décroît linéairement vers -$\infty$, de -6 dB/octave (-20 dB/décade) pour un filtre de premier ordre, -12 dB/octave soit -40 dB/decade pour un filtre de second ordre, -18 dB/octave soit -60 dB/decade pour un filtre de troisième ordre, etc.
+  Le gain d'un filtre de Butterworth est le plus constant possible dans la bande passante et tend vers 0 dans la bande de coupure. Sur un diagramme de Bode logarithmique, cette réponse décroît linéairement vers -$\infty$, de -$6dB/octave$ (-$20 dB/$\textit{décade}) pour un filtre de premier ordre, -$12dB/octave$ soit -$40dB/$\textit{décade} pour un filtre de second ordre, -$18dB/octave$ soit -$60dB/4$\textit{décade} pour un filtre de troisième ordre, etc.
   
   %Imagen
   \begin{figure}[H]
  \centering
     \includegraphics[scale=0.5]{Filter.jpeg}
-    \caption{Gains de filtres de Butterworth passe-bas d'ordre 1 à 5 en fonction de la fréquence}
+    \caption{Gains de filtres de Butterworth passe-bas d'ordre $1$ à 5 en fonction de la fréquence}
 \end{figure}
   
   \item[-] \textbf{Fonction de Transfert}
@@ -476,8 +511,8 @@ Avec
     \item[] $G_n$ est le gain du filtre.
     \item[] $H_n$ sa fonction de transfert.
     \item[] $j$ l'unité imaginaire $j^2 = -1$
-    \item[] $\omega$ la fréquence angulaire (ou pulsation) du signal en radians par seconde ($\omega = 2\pi f$
-    \item[] et $\omega_c$ la fréquence de coupure (angulaire) du filtre (à -3dB).
+    \item[] $\omega$ la fréquence angulaire (ou pulsation) du signal en radians par seconde ($\omega = 2\pi f$)
+    \item[] et $\omega_c$ la fréquence de coupure (angulaire) du filtre (à -$3dB$).
 \end{itemize}
 En normalisant l'expression (c’est-à-dire en spécifiant $\omega_c = 1$):
 
@@ -485,14 +520,14 @@ En normalisant l'expression (c’est-à-dire en spécifiant $\omega_c = 1$):
     G_n(\omega) = |H(j\omega)| = \frac{1}{\sqrt{1 + \omega}^2}
 \end{equation}
 
-Les 2n-1 premières dérivées de $G_n$ sont nulles pour $\omega = 0$, impliquant une constance maximale du gain dans la bande passante.
+Les $2n-1$ premières dérivées de $G_n$ sont nulles pour $\omega = 0$, impliquant une constance maximale du gain dans la bande passante.
 
 Aux hautes fréquences :
 
 \begin{equation}
     |H(j\omega)|_{dB} \approx -20 \cdot n\log_{10}(\omega)
 \end{equation}
-Le roll-off du filtre (la pente du gain dans un diagramme de Bode) est de -20n dB/décade, où 'n' est l'ordre du filtre.
+Le roll-off du filtre (la pente du gain dans un diagramme de Bode) est de $-20n$ $dB/$\textit{décade}, où 'n' est l'ordre du filtre.
 
 Le gain ne représente que le module de la fonction de transfert $H(p)$ (au sens de la transformée de Laplace), ce qui laisse une certaine latitude pour déterminer cette dernière. On doit avoir
 
@@ -500,17 +535,17 @@ Le gain ne représente que le module de la fonction de transfert $H(p)$ (au sens
     H(p)H(-p) = \frac{G_0^2}{1 + (-\frac{p^2}{\omega_c^2})^n}
 \end{equation}
 
-Les pôles de cette expression sont équirépartis sur un cercle de rayon  $\omega_c$. Pour que le filtre soit stable, on choisit les pôles de la fonction de transfert comme ceux de $H(p)H(-p)$ ayant une partie réelle négative. Le k-ième pôle est donné à l'aide des racines n-ièmes de l'unité :
+Les pôles de cette expression sont équirépartis sur un cercle de rayon  $\omega_c$. Pour que le filtre soit stable, on choisit les pôles de la fonction de transfert comme ceux de $H(p)H(-p)$ ayant une partie réelle négative. Le k-ième pôle est donné à l'aide des racines nièmes de l'unité :
 
 \begin{equation}
-    -\frac{p_k^2}{\omega_k^2} = \exp({\frac{j(2k - 1)\pi}{n}}); k = 1,2,3,...,n
+    -\frac{p_k^2}{\omega_k^2} = \exp({\frac{j(2k - 1)\pi}{n}}); k = 1,2,3, ...,n
 \end{equation}
     
 
-d'où
+D’où
 
 \begin{equation}
-    p_k = \omega_c\exp{\frac{j(2k + n - 1)\pi}{2n}};  k = 1,2,3,...,n
+    p_k = \omega_c\exp{\frac{j(2k + n - 1)\pi}{2n}};  k = 1,2,3, ...,n
 \end{equation}
 
 La fonction de transfert s'écrit en fonction de ces pôles :
@@ -558,16 +593,16 @@ Les polynômes normalisés de Butterworth peuvent être utilisés pour détermin
 \hfill
 \medskip
 \begin{itemize}
-    \item[-] \textbf{Fonctionde Transfert:}
-    Les filtres Chebyshev de type I sont les types les plus courants de filtres Chebyshev. La réponse en gain (ou en amplitude ) , en fonction de la fréquence angulaire du filtre passe-bas du n ième ordre est égale à la valeur absolue de la fonction de transfert évaluée à $G_n(s)\omega H(s)s = j\omega$
+    \item[-] \textbf{Fonction de Transfert:}
+    Les filtres Tchebychev de type I sont les types les plus courants de filtres Tchebychev. La réponse en gain (ou en amplitude) , en fonction de la fréquence angulaire du filtre passe-bas du n ième ordre est égale à la valeur absolue de la fonction de transfert évaluée à $G_n(s)\omega H(s)s = j\omega$
 
         \begin{equation}
             G_n(s) = |H_n(j\omega)| = \frac{1}{\sqrt{1 + \epsilon^2T_n^2(\frac{\omega}{\omega_0})}}
         \end{equation}
 
-        où $\epsilon$ est le facteur d'ondulation,$\omega_0$ est la fréquence de coupure et $T_n$ est un polynôme de Chebyshev du $n$-ème ordre
+        Où $\epsilon$ est le facteur d'ondulation,$\omega_0$ est la fréquence de coupure et $T_n$ est un polynôme de Tchebychev du $n$-ème ordre
     
-        \item[-] \textbf{Polynme de Tchebychev:}
+        \item[-] \textbf{Polynôme de Tchebychev:}
         La définition classique des polynômes de Tchebychev de première espèce est le plus souvent donnée par la relation de récurrence suivante :
 
             \begin{equation}
@@ -581,14 +616,14 @@ Les polynômes normalisés de Butterworth peuvent être utilisés pour détermin
 \hfill
 \medskip
 \begin{itemize}
-    \item[-] \textbf{Fonctionde Transfert:}
+    \item[-] \textbf{Fonction de Transfert:}
     Un filtre passe-bas Bessel se caractérise par sa fonction de transfert :
 
         \begin{equation}
             H(s) = \frac{\Theta_n(0)}{\Theta_n(s/\omega_0)}
         \end{equation}
 
-    où $\Theta_n(s)$ est un polynôme de Bessel inversé dont le filtre tire son nom et $\omega_0$ est  la fréquence de coupure . Le filtre a un retard de groupe basse fréquence de $1/\omega_0$. Puisque est indéterminé par la définition des polynômes de Bessel inversés, mais $\Theta_n(0)$ est une singularité amovible, il est défini que $\Theta_n(0) =  \lim_{x\to\infty} \Theta_n(x)$
+    Où $\Theta_n(s)$ est un polynôme de Bessel inversé dont le filtre tire son nom et $\omega_0$ est  la fréquence de coupure . Le filtre a un retard de groupe basse fréquence de $1/\omega_0$. Puisque est indéterminé par la définition des polynômes de Bessel inversés, mais $\Theta_n(0)$ est une singularité amovible, il est défini que $\Theta_n(0) =  \lim_{x\to\infty} \Theta_n(x)$
 
     \item[-] \textbf{Polynôme de Bessel:}
         Les polynômes de Bessel inversés sont donnés par: 
@@ -597,10 +632,10 @@ Les polynômes normalisés de Butterworth peuvent être utilisés pour détermin
             \Theta_n(s) =  \sum_{k=0}^{n} a_k s^k 
         \end{equation}
 
-        où
+        Où
 
         \begin{equation}
-            a_k = \frac{(2n - k!)}{2^{n-k} k!(n-k!)}; k = 1,2,3,...,n
+            a_k = \frac{(2n - k!)}{2^{n-k} k!(n-k!)}; k = 1,2,3, ...,n
         \end{equation}
 \end{itemize}
 
@@ -624,97 +659,408 @@ L'échelle des pulsations est logarithmique et est exprimée en rad/s (radian pa
 \end{figure}
 
 \paragraph{Transformée de Laplace}
-La transformée de Laplace d’une fonction f(t) est :
+La transformée de Laplace d’une fonction $f(t)$ est :
 \begin{equation}
     F(s) = L{f(t)} = \int\limits_{0}^{\infty}\ f(t)\exp(-st) dt
 \end{equation}
 
 La transformée de Laplace permet de transformer le problème du domaine du temps au domaine de fréquence.
-Lorsqu’on obtient la réponse voulue dans le domaine de fréquence, on transforme le problème á nouveau dans le domaine du temps, á l’aide de la transformée inverse de Laplace, qui est definie par:
+Lorsqu’on obtient la réponse voulue dans le domaine de fréquence, on transforme le problème á nouveau dans le domaine du temps, á l’aide de la transformée inverse de Laplace, qui est définie par:
 
 \begin{equation}
     f(t) = L^{-1}{F(s)} = \frac{1}{2j\pi} \int\limits_{-\infty}^{\infty} \ F(s)\exp(st) ds
 \end{equation}
 
-\subsection{\textbf{Filtre de Wiener}}
-Le filtre de Wiener est une des meilleur filtres linaires de minimum carré. Il peut être utilisé pour prédire, estimer, interpoler, filtrer un signal et le bruit, entres autres. Pour créer ce type de filtre, il faut connaitre avoir une connaissance préalable du signal que le système aura comme entrée, c’est à dire le signal qui sera filtré. Le plus grand problème c’est que cette information est difficile à obtenir, c’est pour cela que les filtres adaptatifs sont très importants, parce qu’ils utilisent les données d’entrée pour pouvoir déterminer les données statistiques requis. En général, on a un signal $f(k)$, une réponse désiré $d(k)$ et un filtre linéaire de réponse impulsionnelle $h(k)$. Ce filtre est alimenté par $f(k)$ et produit une sortie $g(k)$. La différence entre le signal de sortie $g(k)$ et le signal désiré $d(k)$, est connue comme erreur d’estimation $e(k)$, la figure suivante illustre ce fait :
+\subsubsection{Implémentation de filtre de Butterworth sur Matlab}
 
-% Imagen
+\paragraph{Fonction Matlab Butter}
+\hfill \\
+Lorsqu’on a  effectué les recherches documentaires sur le filtre passe bas de Butterworth, on s’est rendu compte que le logiciel Matlab comptait déjà avec une fonction qui permet de créer ce filtre. De même, il compte avec d’autres fonctions permettant de créer les filtres analogiques vue précédemment. La fonction correspondante au filtre passe-bas avec une approximation de Butterworth est la suivante :
+
+\[\texttt{butter}\]
+
+\textbf{Remarque :} La fonction \textit{butter} permet de créer des filtres passe-bas, passe-haut, coupe bande et réjecteur de bande. Le type de filtre qu’elle créera est spécifié comme un paramètre.
+  
+La fonction \textit{butter} est bien intéressante dans la mesure où elle peut être utilisé de $5$ façons différentes, c’est-à-dire qu’il s’agit d’une fonction polymorphique. 
+
+La première façon de l’utilisé est la suivante
+
+
+\[\texttt{[b,a] = butter}(\texttt{n},\omega_\texttt{n})\]
+
+Elle revoit les coefficients de la fonction de transfert d’un filtre digital passe-bas de Butterworth d’ordre $n$ et avec une fréquence de coupure normalisé $\omega_n$. 
+
+La deuxième façon est la suivante :
+
+\[\texttt{[b,a] = butter}(\texttt{n},\omega_\texttt{n}, \texttt{ftype})\]
+
+Elle renvois les coefficients de la fonction de transfert comme précédemment, mais cette manière d’utilisé la fonction butter permet de définir le type de filtre qui est rentré dans le paramètre \texttt{ftype}. \textbf{Remarque :} Les filtres résultants lors de la création d’un coupe band ou réjecteur de bande son de l’ordre de $2n$.
+
+La troisième façon est :
+
+\[\texttt{[z,p,k] = butter}(\_\_\_)\]
+
+Cette utilisation de la fonction butter, conçoit un filtre de Butterworth passe-bas, passe-haut, coupe bade ou réjecteur de bande et renvois les zéros, les pôles et le gain du filtre. Cette syntaxe peut recevoir n’importe lequel argument d’entrée de ceux qu’on a vue précédemment.
+La quatrième est :
+
+\[\texttt{[A,B,C,D] = butter}(\_\_\_)\]
+
+Cette utilisation , conçoit un filtre de Butterworth passe-bas, passe-haut, coupe bade ou réjecteur de bande et renvois ses matrices de représentation spatiale dans son état actuel.
+Et la cinquième et dernière :
+
+\[\texttt{[\_\_\_] = butter}(\_\_\_,\texttt{'s'})\]
+
+Conçoit un filtre analogique de Butterworth passe-bas, passe-haut, coupe bade ou réjecteur de bande avec une pulsation ou fréquence angulaire de coupure $\omega_n$.
+
+On s’intéresse à la première syntaxe de la fonction \texttt{butter}.
+
+Pour créer notre filtre passe-bas de Butterworth, il faut qu’on définisse la fréquence de sortie, la fréquence de coupure et l’ordre du filtre. 
+On définit ses paramètres de la façon suivante sur la ligne de code Matlab :
+
+\[\texttt{fs = }60000 \texttt{;}\]
+\[\texttt{fc = }1000 \texttt{;}\]
+\[\texttt{n = }2 \texttt{;}\]
+
+Où \texttt{fs} es la fréquence de sortie, \texttt{fc} est la fréquence de coupure et $n$ est l’ordre du filtre. 
+Puis, on rentre la ligne de code suivante :
+
+\[\texttt{[pôles, zéros] = butter}(\texttt{n,fc/(fs/2)}) \texttt{;}\]
+
+Et Matlab nous revoit :
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=0.7\textwidth]{nuevobutter1.png}
+\end{figure}
+
+On a maintenant les pôles et les zéros de notre filtre passe-bas de Butterworth, mais on veut aussi voir à quoi il ressemble ou plutôt à quoi ressemble son diagramme de Bode en gain et phase. Pour cela, on rentre sur la ligne de code de Matlab, la commande suivante :
+
+\[\texttt{ freqz(poles,zeros)}\]
+
+
+Matlab nous revoit le graphique ci-dessous :
 
 \begin{figure}[H]
  \centering
-    \includegraphics[width=0.5\textwidth]{Wiener.png}
-    \caption{Filtre de Wiener}
+    \includegraphics[width=0.7\textwidth]{nuevobutter2.png}
+    \caption{Diagramme de Bode en gain et en phase du filtre de Butterworth d'ordre 2 et de fréquence de coupure $f_c = 1000 Hz$.}
 \end{figure}
 
-L’objectif du filtre de Weiner est de déterminer la réponse impulsionnelle $h(k)$ dans le but de produit une erreur $e(k)$ le plus petit possible. Le critère utiliser pour réaliser cela est la minimalisation du valeur quadratique moyen de l’erreur.
+\paragraph{Importation du filtre de Butterworth sur l'outil sptool}
+\hfill \\
 
-Le filtre digital montrer dans l’image a un signal d’entre et produit un signal de sortie. Le filtre sera un filtre de Wiener si sa réponse impulsionnelle est choisie dans l’objectif de minimiser l’erreur quadratique moyen. L’erreur est définie comme la différence entre la sortie et la réponse désiré et est décrit par l’équation suivante :
+L'outil \textit{sptool} est un outil Matlab qui permet l'analyse, la visualisation et le traitement des signaux. Lorsqu'on verra la modification de la méthode du filtre de Butterworth, on expliquera plus en détail l'utilisation de cet outil. Dans cette partie on se limitera à montrer comment importer les pôles et les zéros corresponds au filtre pour ainsi pour créer le filtre dans cet outil, et par la suite pourvoir l'utiliser dans le filtrage des signaux en question.
+
+Tout d’abord, on ouvre l’outil \textit{sptool} en rentrant sur la ligne de code la commande suivante :
+\[\texttt{sptool}\]
+
+Matlab nous ouvrira la fenêtre ci-dessous correspondante a l’outil \textit{sptool} :
+
+ \begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.3]{b5.jpeg}
+    \caption{Outil Matlab sptool}
+\end{figure}
+
+
+Puis on clique sur l’onglet \textit{File} et on choisir l’option \textit{Import…}, comme le montre l’image ci-dessous :
+
+ \begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.7]{nuevobutter13.png}
+\end{figure}
+
+Ensuite, une nouvelle fenêtre s’ouvre où on peut importer les vecteurs correspondants pôles et zéros dans le but de créer notre filtre dans l’outil \textit{sptool}. Tout d’abord, on choisit sur la colonne \textit{Source} l’endroit d’où en importera les vecteurs, dans ce cas coche l’option \textit{From Workspace}. Puis dans la colonne \textit{Import As :}, on choisit \textit{Filter} sur l’option déroulante, qui se trouve à cote du label \textit{Import As :}, et on confirme que l’option \textit{Tranfer Function} soit choisi dans l’option déroulante qui se trouve à cote du label \textit{Form : }. On remarque entre les colonnes \textit{Workspace Contents} et la colonne \textit{Import As : }, qui vient de changer, apparaissent 2 petits flèches qui pointe ver la colonne \textit{Import As : }. Ces 2 flèches illustrent l’importation des vecteurs correspondants aux pôles et aux zéros de la fonction de transfert du filtre. Ensuite en sélection le vecteurs \textit{zéros} et cliquant sut la flèche qui pointe vers le label \textit{Numerator} et on fait de même avec le vecteur \textit{pôles} et la flèche qui pointe vers le label \textit{Denominator}. Puis sur la ligne \textit{Name} qui se trouve en bas de la colonne \textit{Import As : }, on définit le nom de notre filtre, dans ce cas on nomme notre filtre comme \textit{filtbutter1}. L’image ci-dessous illustre cette procédure.
+
+ \begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.6]{nuevobutter4.png}
+\end{figure}
+
+Puis, on clique sur le buton \textit{OK} et on crée notre filtre. On revient alors sur la fenêtre principale de \textit{sptool} et on remarque qu'il y a un nouveau filtre sur la colonne \textit{Filters} (voir image ci-dessous).
+
+\begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.6]{nuevobutter5.png}
+\end{figure}
+
+Maintenant, si on veut voir l'allure du diagramme de Bode de notre filtre, il suffira de le sélectionner et de cliquer sur le buton \textit{View}, comme le montre l'image ci-dessous.
+
+\begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.6]{nuevobutter6.png}
+\end{figure}
+
+Il nous renvois une nouvelle fenêtre sur laquelle on peut voir le diagramme de Bode en gain, le diagramme de Bode en phase ou les 2 diagrammes de Bode dans un seul graphique. On choisit la dernière option (voir image ci-dessous) et remarque qu'il s'agit du même diagramme de Bode que celui qu'on a vue dans le paragraphe \textit{Fonction Matlab butter}, ce qu’est normal.
+
+\begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.7]{nuevobutter7.png}
+    \caption{Diagramme de Bode en gain et phase du filtre}
+\end{figure}
+
+\paragraph{Filtrage avec l'outil sptool}
+\hfill \\ 
+
+Pour effectuer le filtrage des signaux en question, on utilisera aussi l’outil \textit{sptool}. Dans la partie \textit{Butterworth modifiée}, plus précisément dans le paragraphe \textit{ Modification du filtre de Butterworth à partir de la fréquence de coupure}, on expliquera plus en détail l’importation d’un signal dans l’outil \textit{sptool}.
+
+Dans cette partie, on se limitera à expliquer comment filtrer avec notre filtre, un signal déjà importe dans l’outil. Tout cela pour éviter la répétition d’une explication qui pourrait entrainer à une confusion. 
+
+Après avoir importé le signal dans l’outil \textit{sptool}, on remarque que sur la colonne \textit{Signals}, on a un nouveau signal nommé \textit{original} (voir image ci-dessous). 
+
+\begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.6]{nuevobutter10.png}
+\end{figure}
+
+Matlab nous renvois une nouvelle fenêtre où on put définir le nom du nouveau signal. On choisit de le nommé \textit{sig1}. (Voir image ci-dessous).
+
+\begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.6]{nuevobutter11.png}
+\end{figure}
+
+Puis en cliquant sur le buton \textit{OK}. Matlab nous renvois le graphique ci-dessous correspondant au spectre en fréquence du nouveau signal.
+
+\begin{figure}[H]
+ \centering
+    \includegraphics[scale=0.6]{nuevobutter9.png}
+    \caption{Spectre en fréquence su signal filtré.}
+\end{figure}
+
+Maintenant, on exporte le nouveau signal dans le \textit{Workspace} en cliquant sur l’onglet \textit{File} et en choisissant l’option \textit{Export…}. Une fois le signal exporter, on constate que le vecteur qui nous intéresse est compris dans la structure \textit{sig1}. Pour récupérer ce vecteur, on rentre la ligne de commande suivant :
+
+\[\texttt{y1 = sig1.data ;}\]
+
+Et on remarque qu’un nouveau vecteur est définit sur notre \textit{Workspace}. 
+
+A partir de ce vecteur et de la variable f, on crée un nouveau fichier audio avec la fonction \textit{audiowrite} (l’explication de l’utilisation de cette fonction se trouve dans partie  \textit{Butterworth modifiée}, plus précisément dans le paragraphe \textit{ Modification du filtre de Butterworth à partir de la fréquence de coupure}). Puis nous effectuant une comparaison du taux de bruit présent dans le signal, en utilisant une analyse statistique, ce que nous permet d’obtenir les tableaux de la partie \textit{Résultats Quantitatifs}. On effectue cette même procédure pour les signaux avec une addition de 30\% de bruit blanc, rose et rouge respectivement et on obtient les tableaux de la partie \textit{Résultats Quantitatifs}.
+
+
+\subsection{\textbf{Filtre de Wiener}}
+
+Le filtre de Wiener est un filtrer inventer par Norbert Wiener en 1940 et publier en 1949. Le but de ce filtre est de réduire le bruit présent dans un signal étudier en employant des méthodes statistiques, de façon que le signal de sortie du filtre soit le plus re semblable possible au signal qu’on désire obtenir sans bruit. Ce filtre produit une estimation du signal désirer en employant un filtre linéaire et invariant dans le temps du signal étudier, en supposant qu’on connait le spectre en fréquence du signal et du bruit auditif, en minimisant l’erreur moyenne quadratique entre le signal estimé et le signal désiré. 
+
+\medskip
+Maintenant, on désire filtrer un signal $x[n]$  pour le modifier de manière a que celui-ci s’approxime à un certain signal $d[n]$ dans le sens statistique. C’est-à-dire, la sortie du filtre $y[n]$ est une bonne estimation de $d[n]$. L’erreur de la sortie $e[n]$ est représenté par le manque de coïncidence entre $y[n]$ et $d[n]$. Ceci peut être considéré comme une spécification du filtre dans le domaine du temps.
+\medskip
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=0.7\textwidth]{Filter.png}
+    \caption{Filtre de Wiener}
+\end{figure}
+Pour obtenir un filtre “optimal » ou « idéal » qui calcul $d[n]$ de $x[n]$, on doit avoir une méthode qui mesure l’efficacité du filtre. On utilise une « fonction  de cout” pour estimer la performance. Cette dernière peut avoir différentes formes, comme celles ci-dessous :
+\medskip
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=0.7\textwidth]{error.png}
+    \end{figure}
+Celle qu’on utilisera pour notre fonction de cout dans le filtre de Wiener est celle de l’erreur quadratique moyen, qui est définie par :
+\medskip
 \begin{center}
-     $e_k=d_k-g_k$
-\end{center}{}
-
-Lorsque nous travaillons avec le filtre de Weiner, généralement la réponse désirée existe dans la forme théorique. Cependant, dans ce cas on travaille avec un réponse désiré connue. La réponse impulsionnelle du filtre de Weiner est obtenue 
-
-Si nous appliquons le carré a l’équation de l’erreur, nous avons :
-
-% ecuación
-\begin{center}
-    $e_k^2=d_k^2+g_k^2-2d_kg_k$
-\end{center}{}
-    
-
-Et on sait que :
-
-% ecuación
-\begin{center}
-     $g_k$ =$\displaystyle\sum_{l=0}^{\infty}f_{k-l} h_l $
+     $ \xi = E[e^2[n]]$
+     \medskip
 \end{center}
-
-
-Si on substitue dans l’équation de l’erreur, on a :
-
-% ecuación
+Où $E[.]$ représente l’attente statistiques et 
+\medskip
 \begin{center}
-    $e_k^2=d_k^2+$ $\displaystyle \sum_{l=-\infty}^{\infty}\displaystyle\sum_{m=-\infty}^{\infty}$$h_l h_\mu f_{k-l} f_{k-\mu}$ $- 2$  $\displaystyle\sum_{l= -\infty}^{\infty}f_{k-l} h_l d_k$
+    $E[e^2[n]]=\int \limits_{-\infty}^{\infty}x^2 p_e(x) dx $
+   \medskip
 \end{center}
+Où $p_e(x)$ est la fonction de densité de probabilité de l’erreur. Le filtre qui est optimal dans le sens de l’erreur quadratique moyen est appelé filtre de Wiener. Dans tous nos analyses on supposera que :
+\begin{enumerate}
+    \item $x[n]$ est dite stationnaire au sens large, c’est-à-dire, elle a un sens et une variation constantes (et infinies), et une fonction de corrélation, qui correspond à une fonction parfois variable :
+    \medskip
+    \begin{center}
+    $E[x[m_1] \cdot x[m_1+n]]=E[x[m_2] \cdot x[m_2+n]]$  \quad  $\forall m_1,m_2   $
+   \medskip
+\end{center}
+Effectivement, une condition plus forte serait de supposer que $x[n]$ est stationnaire dans le sens fort, c’est-à-dire que tous ses moments sont constants et finies. Une condition encore plus forte serait de supposer que $x[n]$ est ergodique, c’est-à-dire que tous ses moments sont les moyennes des échantillons convergent a des moments vrais. Heureusement, c’est deux dernières conditions ne sont pas nécessaires pour l’étude actuelle. 
+    \item Tous les signaux sont de moyenne zéro. \medskip 
+    \item On utilise MSE comme critère d’erreur. \medskip 
+\end{enumerate}
 
-Si, on prend la valeur moyenne à chaque côté, on trouve une expression pour l’erreur quadratique moyenne 
+\subsubsection{Corrélation}
+\medskip
 
-% ecuación
+La définition de la corrélation entre 2 processus aléatoire $x[n]$ et $y[n]$ (lorsque $x$ et $y$ sont totalement stationnaires) est définie par :
+\medskip
 \begin{center}
-     $E[e_k^2]=E[d_k^2]+$ $\displaystyle \sum_{l=-\infty}^{\infty}\displaystyle\sum_{m=-\infty}^{\infty}$$h_l h_\mu E[f_{k-l} f_{k-\mu}]$ $- 2$  $\displaystyle\sum_{l= -\infty}^{\infty}h_l E[f_{k-l}  d_k]$
+   $ \phi_{xy}[k]=E[x[n]y[n+k]]  $
+   \medskip
 \end{center}
+La corrélation est une mesure de la similarité entre 2 variables aléatoire et a un lien avec la quantité d’information qu’une variable aléatoire a sur une autre variable.
+\medskip
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=0.5\textwidth]{corr.png}
+\end{figure}
+
+\subsubsection{Filtres de Wiener de double face (sans restriction)}
+\medskip 
 \begin{center}
-        $= \phi_{dd} (0) + $ $\displaystyle \sum_{l=-\infty}^{\infty}\displaystyle\sum_{m=-\infty}^{\infty}$ $h_l h_\mu \phi_{ff} (l-\mu)$  $- 2$  $\displaystyle\sum_{l= -\infty}^{\infty} h_l \phi_{fd}(l)$
+   $ \xi = E[e^2[n]]]  $
+   \medskip 
+    $=E[(d[n]-y[n])^2]$
+   \medskip 
+    $=E[d^2[n]]-2E[y[n]d[n]]+E[y^2[n]]$
+   \medskip 
+   $=\phi_{dd}[0]- 2 \phi_{yd}[0] + \phi_{yy}[0]$
+   \medskip 
 \end{center}
-
-Avec $\phi_{dd}$ et $\phi_{ff}$ l’autocorrélation et $\phi_{fd}$ la corrélation croisée entre les signaux $f$ et $d$. Si on dérive en fonction de $h$ et on cherche la solution de l’équation lorsque celle-ci tend vers $0$, on a :
-
-% ecuación
+La fonction de cout est, alors, une fonction de la corrélation et de la corrélation croisé de la sortie du filtre et de la sortie désirée. On sait que:
+    \medskip 
 \begin{center}
-     $\displaystyle\sum_{l= -\infty}^{\infty}$ $h_l^* \phi_{ff} (j-l)=\phi_{fd}(j)$
+    $ y[n]= \displaystyle\sum_{m=-\infty}^{\infty}h[m]x[n-m] $
+   \medskip 
 \end{center}
-
-Cette équation est l’équation de Wiener-Holpf, qui peut être écrit de la façon suivante, grave au produit de convolution :
-
-% ecuación
+On observe qu’en général $h[m]$ représente un filtre no causal avec une réponse à l’impulsion infinie (IIR):
+\medskip 
 \begin{center}
-     $h_l^* * \phi_{ff} (k) = \phi_{fd} (k)$
+    $ \phi_{yd}[0]=E[y[n]d[n]]  $
+   \medskip 
+    $=E[\displaystyle\sum_{m=-\infty}^{\infty}h[m]x[n-m]d[n]]$
+   \medskip 
+   $=\displaystyle\sum_{m=-\infty}^{\infty}h[m]\phi_{xd}[m]$
+   \medskip 
+    $\phi_{yy}[0]=E[y[n]y[n]]$
+   \medskip
+    $=E[\displaystyle\sum_{m=-\infty}^{\infty}h[m]x[m-n]\displaystyle\sum_{l=-\infty}^{\infty}h[l]x[n-l]]$
+      \medskip
+    $=\displaystyle\sum_{m=-\infty}^{\infty}\displaystyle\sum_{l=-\infty}^{\infty}h[m]h[l]\phi_{xx}[l-m]$
+        \medskip
+    $ \xi = \phi_{dd}[0]-2[\displaystyle\sum_{m=-\infty}^{\infty}h[m]\phi_{xd}[m]+[\displaystyle\sum_{m=-\infty}^{\infty}\displaystyle\sum_{l=-\infty}^{\infty}h[m]h[l]\phi_{xx}[l-m]]$
+   \medskip
 \end{center}
-Et si on applique la transformé en $Z$ a chaque partie de l’équation, on a :
-
-% ecuación
+Notre objectif est de trouvé $h[n]$ qui minimise $\xi$. Pour cela, il faut prendre le dérivé $\frac{d\xi}{dh[n_i]}$ et la rendre 0.
+    \medskip 
 \begin{center}
-     $H^*(z) \phi_{ff}(z)=\phi_{fd}(z)$  ó  $H^*(z)=\frac{\phi_{fd}(z)}{\phi_{ff}(z)}$
+    $ \frac{d\xi}{dh[n_i]}=0-2\phi_{xd}[n_i]+2 \displaystyle\sum_{m=-\infty}^{\infty}h_{opt}[m]\phi_{xx}[n_i-m]=0$
+   \medskip
+    $  \displaystyle\sum_{m=-\infty}^{\infty}h_{opt}[m]\phi_{xx}[n_i-m]=\phi_{xd}[n_i] $
+   \medskip
 \end{center}
-
-Avec la solution de Weiner, on pet trouver la fonction de transfert du filtre $H(z)$ a partie de la transformé en $Z$ de la fonction d’autocorrélation d’un signal d’entrée, de la corrélation croisée du signal d’entré et la réponse désirée. Si on remplace cette équation dans l’expression de l’erreur, on a la valeur minimal MSE :
-
-% ecuación
+Il faut faire en sorte que cela soit respecter pour tout $n_i$.
+\medskip
+Cette équation est spécifique à la réponse impulsionnelle du filtre optimal. On observe que celle-ci dépend de la fonction de corrélation croisé entre $x[n]$ et $d[n]$, et la fonction d’autocorrélation de $x[n]$. Le filtre optimal se connue comme la solution de Wiener. En observant que la partie gauche de l’équation est égal à la convolution de $h_{opt}[n]$ et $\phi_{xx}[n]$.
+    \medskip 
 \begin{center}
-     $E(e_k^2)_{min}=\phi_{dd}(0)-$ $\displaystyle\sum_{l= -\infty}^{\infty}h_l^* \phi_{fd}(l)$
+   $H_{opt}(z)\varphi_{xx}(z)=\varphi_{xd}(z)$
+   \medskip 
+    $H_{opt}(z)=\varphi_{xd}(z)\varphi^{-1}_{xx}(z)$
+   \medskip 
 \end{center}
+ \textbf{Remarque: } La réponse impulsionnelle d'un système discret ou échantillonné est la réponse temporelle avec comme entrée une distribution discrète de Dirac qui est définie par :
+\begin{equation}
+	u(k) = \delta(k) = 
+	\begin{cases*}
+		1 & si $k = 0$ \\
+		0 & si $k \neq 0$
+	\end{cases*}
+ \end{equation}
+
+ \subsubsection{Implémentation du filtre de Wiener sur Matlab} \medskip 
+Le filtre de Wiener a une fonction définie sur le logiciel Matlab étant la suivante :
+\[\texttt{ wiener2}\]
+Cette fonction est une fonction créer pour le filtrage du bruit présent dans les images, elle n’est donc pas apte pour le filtrage de bruit présent dans les signaux sonores, même si les images sont aussi des signaux. On pourrait utiliser cette fonction pour notre étude, or cette fonction n’est pas efficace pour le filtrage d’un signal sonore. C’est pour cette raison que, pour cette étude, on utilisera une autre fonction Matlab étant la suivante :
+\[\texttt{ WienerScalart96}\]
+Cette méthode sera expliquée à continuation. Sur l’image ci-dessous on peut voir une partie du code de cette fonction.
+\medskip
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=1\textwidth]{Wiener1.png}
+\end{figure}
+
+Cette fonction du filtre de Wiener fonctionne en s’inspirant du suivi de la relation signal-bruit (SRN) en utilisant la décision directe en réduisant l’erreur quadratique moyen (MSE) 
+\medskip
+La fonction \textit{WienerScalar96} reçoit 3 arguments : Le signal contaminé ou bruité, la fréquence et un « silence initial » basé sur le signal. 
+\medskip 
+Le filtre de Wiener compte internement avec 3 autres fonctions qui permettent la bonne fonction de la méthode. 
+\medskip
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=1\textwidth]{Wiener2.png}
+    \medskip
+\end{figure}
+
+ 
+Cette fonction est chargée de reconstruire le signal pendant que la méthode s’exécute. La fonction de cette fonction est de changé  les « entrée » du signal bruité initial  par le nouveau signal reconstruit. newline  \medskip 
+Cette fonction reçoit 4 arguments qui ont une relation avec la position du signal de restauration et la longueur de ce dernier.
+
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=1.3\textwidth]{Wiener3.png}
+\end{figure}
+
+La fonction \textit{segment} coupe un signal en segments superposé avec des fenêtres et renvois une matrice dont les colonnes sont segmentées et sont des cadres de fenêtre du signal d’entrée unidimensionnel.
+ \medskip
+L’argument qu’elle reçoit sont :
+\begin{itemize}
+    \item $W$ qui correspond au nombre d’échantillons par fenêtre, la valeur prédéterminée pour $W$ est : $W = 256$
+   \item $SP $ qui est le changement de pourcentage. La valeur prédéterminer de $SP$ est : $SP = 0,4$
+  \item $Window $ est la fenêtre qui multiple chaque segment et sa longueur doit être égal a $W$.
+  \item Le signal initial
+\end{itemize}
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=1\textwidth]{Wiener4.png}
+\end{figure}
+
+
+Cette fonction $vad$ (voir image ci-dessus) est le détecteur d’activité de la voix à distance spectrale, ce qui veut dire que cette fonction est chargée de détecter le bruit présent dans les signaux et a comme arguments :
+\begin{itemize}
+    \item $signal$ qui correspond au spectre en fréquences des photogrammes actuelles qui sont étiquetés comme du bruit. 
+\item $noise$ qui est un modelé de l’spectre en fréquence du bruit
+\item $noiseCounter$ qui correspond au nombre parcelles du bruit antérieures immédiat
+\item $noiseMargin$ corresponde au seuil de distance spectrale.
+\item  $Hangover$ correspond au nombre de segments du bruit après lesquelles la fonction se réinitialise
+\end{itemize}
+Ses sorties sont :
+\begin{itemize}
+    \item  Speeche qui va à zéro.
+\item NoiseFlag prend la valeur de 1 si le bruit est étiqueté comme du bruit.
+\item NoiseCounter renvois le nombre de segments antérieures au bruit, cette valeur est mise à zéros chaque fois que la fonction détecte une voix. 
+\item Dist correspond à la distance spectrale.
+\end{itemize}
+\medskip 
+Avec toutes ces caractéristique, la fonction \textit{WienerScalar} permet d’utiliser le filtrage de Wiener a des enregistrements audios bruités avec un meilleur rendement que la fonction prédéterminée de Matlab Wiener2.
+
+\medskip
+On verra maintenant comment fonction cette méthode. Pour cela, on utilisera un enregistrement audio nommé \textit{Original.wav}. Pour lire ce fichier, on entre la ligne de code suivant sur la ligne de commande Matlab :
+\[\texttt{O = audioread('Original.wav',fs) } \texttt{;}\]
+Avec $O$ le vecteur qui décrit l’enregistrement audio \textit{Original.wav}.
+\medskip 
+On lui ajoute à cet audio 30\% de bruit rouge de la façon suivante :
+On définit $M$ comme le vecteur correspondant au bruit rouge.
+On écrit sur la ligne de commande Matlab le code suivant :
+\[\texttt{M = audioread('Brownian.wav') } \texttt{;}\]
+Cela étant, on créer le signal avec l’ajout de 30\% de bruit rouge, en écrivant sur la ligne de code Matlab le code suivant :
+\[\texttt{AR = O + M*0,3 } \texttt{;}\]
+\medskip
+On peut créer un nouveau fichier audio en format \textit{.wav} avec la commande suivante :
+\[\texttt{audiowrite('AR0,3M.wav',AR,fs) } \texttt{;}\]
+On peut reproduire cette audio avec la commande suivante :
+\[\texttt{sound(AR,fs) } \texttt{;}\]
+Maintenant on exécute la fonction \textit{WienerScalart} avec la commande suivante :
+\[\texttt{output=WienerScalart96(AR,fs,IS) } \texttt{;}\]
+LA fonction reçoit comme entrée le signal $AR$, la fréquence $f_s$ qui dans ce cas est de $48000$ et un silence initial $SI$, qui est utilisé pour modelé le bruit pensent dans l’audio, qui est donné en secondes. Dans ce cas, on prendra la valeur de 10. 
+Lorsqu’on exécute cette fonction, on reçoit comme résultat de sortie un vecteur (nommé $output$) de la même taille et de la même duration que le signal en entrée.
+Pour écrire le fichier \textit{.wav} correspondant  à ce vecteur on rentre la commande suivante :
+\[\texttt{audiowrite('AR0,3M-out.wav',output,fs) } \texttt{;}\]
+Et pour reproduire ce signal avec la commande suivante :
+\[\texttt{sound(output,fs) } \texttt{;}\]
+Maintenant, on veut voir numériquement si cette méthode est efficace pour l’atténuation du bruit et ainsi, connaitre le pourcentage de bruit présent dans le signal après filtrage. Pour cela on utilise la variance, comme on peut voire à continuation :
+\[\texttt{r=abs(1-var(O))/var(output)} \texttt{;}\]
+On constate que le résultat obtenu est de 36.209. On peut interpréter cela de la façon suivante, sur le signal de sortie obtenue il y a une présence de 36.209/5 de bruit. Mais qualitativement, on se rend compte que l’audio est perçu d’une meilleure façon, même s’il possède encore du bruit. 
+\medskip 
+
+On peut aussi confirmer les résultats graphiquement, avec l’amplitude et la fréquence en fonction du temps du signal original, du signal bruité et du signal filtré comme on peut voir dans l’image suivante
+\begin{figure}[H]
+ \centering
+    \includegraphics[width=1\textwidth]{Wiener5.png}
+    \caption{Fréquence et amplitude du signal original, du signal bruité et du signal filtré }
+    \medskip
+\end{figure}
+Graphiquement, on peut voir que le signal orignal est celui qui se trouve le plus en bas, le signal bruité est celui du milieu et le signal filtré est celui le plus haut. On peut vérifier ce qu’on a dit précédemment para rapport au signal filtré, qualitativement parlant il est meilleur que les autres. On constate aussi une diminution du bruit dans le signal bruit, mais aussi que le signal original a perdu un peut en intensité. Cependant lorsque nous écoutant les 3 audios, on constate que le filtrage a largement améliorer le signal.
 
 
 \subsection{\textbf{RNNbruit: Méthode hybride DSP/Deep Learning}}
@@ -734,7 +1080,7 @@ Un perceptron prend plusieurs entrée binaires (uniquement de $0$ et de $1$) $x_
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.5]{img9.png}
-    \caption{Ejemplo de la representación gráfica de un perceptrón.}
+    \caption{Exemple de la representation graphique d’un perceptron.}
 \end{figure}
 
 Dans ce cas le perceptron a 3 entrées, amis en général il peut avoir une quantité arbitraire d’entrées, Rosenbatt propose une règle simple pour calculer la sortie. En effet, il introduit de poids $w_1, w_2, ...$ qui représentent des nombres réels illustrant l’importance de chaque entrée respectivement avec la sortie. La sortie de la neurone ($0$ ou $1$)  résulte de la somme pondérée des entrées, si cette somme est supérieure à une valeur limite, la sortie sera égale à $1$, mais si elle est inferieurs à cette valeur limite la sortie sera $0$. 
@@ -778,7 +1124,7 @@ Elles se représentent de la même façon que les perceptrons :
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.5]{img9.png}
-    \caption{Ejemplo de la representación gráfica de un sigmoïde.}
+    \caption{Exemple de la representation graphique d’une sigmoide.}
 \end{figure}
 
 Elles ont un nombre arbitraire d’entrées $x_1, x_2, ...$, mais les valeurs des entrées prennent de valeurs comprises entre 0 et 1. Elles possèdent aussi un poids pour chaque entrée, $w1, w2, ...$, et un biais $b$. Dans ce cas, les sorties ne sont pas de valeurs de $0$ ou $1$, mais une fonction $g(w\cdot x+b)$, où g est appelé la fonction sigmoïde ou en général, fonction d’activation, et est définie par : 
@@ -788,7 +1134,7 @@ Elles ont un nombre arbitraire d’entrées $x_1, x_2, ...$, mais les valeurs de
     g(z)=\dfrac{1}{1+e^-z}
 \end{equation}
 
-Où $z=w\cdot x+b$. Grafiquement est definie par:
+Où $z=w\cdot x+b$. Graphiquement est définie par:
 
 %imagen
  \begin{figure}[H]
@@ -832,7 +1178,7 @@ La colonne de gauche qui contient toutes les entrées est connue comme “couche
 
 \subsubsection{Réseau de neurones récurrents (Recurrent Neural Networks, RNN)}
 
-Les réseaux de neurones récurrents sont un autre type de réseau de neurones. Il se caractérisent par le fait que la sortie donnée par une neurone est la sortie générale du réseau et au même temps, cette sortie est l’entrée pour le neurone suivante, comme l'ilustre l'image ci-dessous : 
+Les réseaux de neurones récurrents sont un autre type de réseau de neurones. Il se caractérisent par le fait que la sortie donnée par une neurone est la sortie générale du réseau et au même temps, cette sortie est l’entrée pour le neurone suivante, comme l'illustre l'image ci-dessous : 
 
 %imagen
  \begin{figure}[H]
@@ -856,228 +1202,184 @@ La formule qui décret la sortie d’un réseau de neurones récurrent est la su
 
 Où g est la fonction d’activation du neurone.  
 
-\subsubsection{Deep Learning}
-Il s’agit d’une méthode de Machine Learning qui « apprend » aux ordinateurs à faire ce que nous, les être humain, arrivons à faire naturellement \textbf{apprentissage par exemples}. La plupart des méthodes de \textit{deep learning} utilisent des architectures de réseaux de neurones, c’est pour cette raison que la méthode de deep learning sont connue aussi sous le nom de \textit{deep learning networks}. Le therme « deep » fait référence au nombre de couches présentes dans les réseaux de neurones. En effet, les réseaux de neurones traditionnels ont entre 2 et 3 couches cachées, cependant les réseaux deep (deep networks) peuvent avoir beaucoup plus, par exemples elles peuvent contenir 150 couches cachées.
-\medskip
-
-Les modèles de deep learning s’entrainent en utilisant de grands ensembles de données étiquetées et des architectures de réseaux qui apprennent des caractéristiques directement des données sans besoin d’effectuer une extraction manuelle des caractéristiques en question. Cette dernière est la principale différence avec \textit{machine learning}, où l’extraction des caractéristiques remarquables se fait manuellement. Dans le cas du deep learning, ces caractéristiques sont extraites automatiquement , et en plus, il réalise un apprentissage « du début jusqu’à la fin » (\textit{end-to-end learning}), où un réseau reçoit les données brutes et à un revoir qui réalise, par exemple classifier, et apprend comment le faire automatiquement. L’image ci-dessous est un exemple de la différenciation entre machine learning et deep learning.
-
-%imagen
- \begin{figure}[H]
- \centering
-    \includegraphics[scale=0.7]{DeepLearning.png}
-    \caption{Comparaison d’un point de vue de machine learning pour catégoriser des véhicules (gauche) avec un de deep learning (droite).}
-\end{figure}
-
-\subsubsection{Algorithme du  Gradient}
-\hfill\\
-Il s’agit d’un algorithme d’optimisation qui est utilisé pour réduire le cout d’une fonction lorsque celle-ci se déplace itérativement dans la direction de la descente la plus importante selon ce qui est définie par le négatif du gradient. En machine learning, on l’utilise pour mettre à jour les paramètres du modèle. Les paramètres sont le poids des réseaux de neurones.
-\href{https://ml-cheatsheet.readthedocs.io/en/latest/gradient_descent.html}{fuente}
-\medskip
-
-\subsubsection{The Vanishing Gradient Problem}
-\hfill\\
-Il s’agit d’entrainer les réseaux de neurones artificiels avec de méthodes d’apprentissage basé sur le gradient  et la rétropropagation du gradient (\textit{backpropagation}). Dans ces méthodes, chacun des poids du réseau de neurones reçoit une mise à jour proportionnel à la dérivée partielle de la fonction de l’erreur ou de cout par rapport au poids actuel en chaque itération de l’entrainement. Le problème est que dans certain cas, le gradient est tellement petit, qu’il prévient qu’un certain poids soit mis à jour ou change sa valeur. Dans le pire des cas, ceci arrivera totalement dans l’entrainement du réseau de neurones. 
-\href{https://en.wikipedia.org/wiki/Vanishing_gradient_problem}{fuente}
-\medskip
-
-
 \subsubsection{\textbf{RNNbruit: Méthode hybride DSP/Deep Learning}}
 \medskip
 \hfill
 \medskip
-
-Después de haber aclarado los conceptos anteriores, resulta más simple la discusión del método y cómo los involucra. En primer lugar, la \textbf{supresión de ruido} es un tema viejo en el campo de procesamiento de voz (\textit{speech processing}), \href{https://ieeexplore.ieee.org/document/1163209}{que data desde los 70's}, y que como el nombre lo indica la idea es simple: tomar una señal ruidosa y remover tanto ruido como sea posible causando mínima distorsión para el audio de voz de interés.
-
+Après avoir compris les concepts précédents, il est beaucoup plus facile de comprendre la méthode et comment elle fonctionne. Dans un premier temps, \textbf{l’atténuation du bruit} est un sujet qui a toujours causé problème dans le traitement de la voix (\textbf{speech processing}), \href{https://ieeexplore.ieee.org/document/1163209} (qui date des années 70), et comme son nom l’indique, l’idée est simple : il suffit de prendre un signal bruité et éliminer le plus grand nombre de bruit possible sans causer de pertes d’information ou de distorsion pour l’audio qui nous intéresse. 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.7]{noise_suppression.png}
-    \caption{Esta es una visión conceptual de un algoritmo convencional de supresión de ruido. Un módulo de detección de actividad de voz o VAD (\textit{Voice Activity Detection}) detecta cuándo la señal contiene voz y cuándo es solo ruido. Esto es utilizado por un módulo de estimación espectral de ruido (\textit{Noise Spectral Estimation}) para descifrar las características espectrales del ruido(cuánta potencia hay en cada frecuencia). Luego, sabiendo cómo es el ruido, puede ser "substraído" (no es tan simple como suena) del audio de entrada}
+    \caption{Ceci est la vision conceptuelle d’un algorithme conventionnel d’atténuation du bruit. Un modèle de détection de l’activité de la voix ou VAD (\textit{Voice Activity Detection}) détecte le signal qui contient la voix et le bruit. Ceci est utilisé par un modèle d’estimation spectral du bruit (\textit{Noise Spectral Estimation}) pour déchiffrer les caractéristiques spectrales du bruit. Ensuite, sachant comment est bruit, celui-ci peut être « soustrait » (ce n’est pas aussi facile que ça semble) de l’audio qui est l’entrée du modèle }
     \label{Figure 14}
 \end{figure}
-
-El único problema de la imagen de arriba es que pareciera que la supresión de ruido es simple: hacer estas 3 tareas conceptuales y ya está. Esto no es del todo cierto, pues \underline{la parte
-difícil} es hacer que el algoritmo funcione bien, todo el tiempo, para todos los tipos de ruido. Esto requiere que el algoritmo sea configurado meticulosa y cuidadosamente para cada caso particular, por lo que la opinión más común sobre el tema se resume en "50\% ciencia, 50\% arte".
-
-Después de aclarar esto, viene la parte del \textbf{deep learning y las redes neuronales recurrentes}. El deep learning es la nueva versión de una idea vieja: redes neuronales artificiales. Aunque éstas han estado desde los 60s, lo que es nuevo en los años recientes es que:
+Le seul problème de l’image ci-dessus est qu’il semblera que la suppression du bruit est simple : Faire ces 3 taches conceptuel et c’est fini. Ceci n’est pas tout à fait vrai, car \underline{le plus difficile} est de faire que l’algorithme soit configuré minutieusement et attentivement pour chaque cas particulier. Par conséquent, l’opinion la plus courante sur ce sujet se résume en « 50\% science, 50\% art ».
+Après avoir compris cela, il est temps d’explique et comprendre le \textbf{deep learning et les réseaux de neurones récurrents}. Le deep learning est une nouvelle version d’une idée ancienne : réseau de neurones artificielles. Bien que ce soit derniers sont utilisée depuis les années 60, ce qui est nouveau est :
 
 \begin{enumerate}
-    \item Ahora sabemos cómo hacerlas más profundas que 2 capas ocultas
-    \item Ahora sabemos cómo hacer que las redes recurrentes recuerden patrones del pasado
-    \item Ahora tenemos los recursos computacionales para entrenarlas
+    \item Maintenant on sait comment faire plus de 2 couches cachés
+    \item On sait comment faire que les réseaux récurrents des patrons du passé
+    \item On a des ressources de calcul pour les trouvés
 \end{enumerate}
 
-Las redes neuronales recurrentes son muy importantes para el método porque hacen posible modelar secuencias de tiempo en vez de solo considerar entradas y salidas independientemente. Esto es especialmente importante para la supresión de ruido \underline{porque necesitamos tiempo para obtener un buen estimado del ruido}. Durante un tiempo las RNNs estaban altamente limitadas en su habilidad debido a dos problemas: no podían retener información por un largo periodo de tiempo y porque el proceso de gradiente descendente involucrado en la propagación hacia atrás (\textit{back-propagating}) a través del tiempo era muy ineficiente (problema de desvanecimiento de gradiente). Ambos problemas fueron solucionados por la invención de \textit{unidades cerradas} (\textit{gated units}), tales como las LSTMs (\textit{Long Short-Term Memory}), las GRUs (\textit{Gated Recurrent Unit}), y sus muchas variantes.
+Les réseaux de neurones récurrents sont très importants pour cette méthode parce qu’elles modèlent de séquences de temps au lieu de considéré uniquement les entrées et les sorties indépendamment. Ceci est important pour l’atténuation ou élimination du bruit \underline{car on a besoin du temps pour obtenir une bonne estimation du bruit}. Durant un certain temp les RRNs étaient  hautement limité dans son activité à cause de deux problèmes : elles ne pouvaient pas retenir l’information pendant un long période de temps et parce que le processus de l’algorithme du gradient impliqué dans la rétropropagation du gradient \textit{backpropagating} au cours du temps était inefficace (il s’agissait d’un problème d’évanouissement du gradient). Ces deux problèmes ont été résolu avec l’invention des \textit{unités fermées} (\textit{gated units}), comme les LSTM (\textit{ Long Short-Term Memory}), les GRU (\textit{Gated Recurrent Unit}), entre autres.
 
-
-RNNbruit usa las unidades recurrentes cerradas (GRU) porque funcionan mejor que las LSTM en esta tarea y requieren menos recursos computacionales (CPU y memoria). Comparada con las unidades recurrentes simples, las GRUs tienen dos compuertas extra. La compuerta de reinicio (\textit{reset gate}) controla si el estado (memoria) es usado en la computación del nuevo estado, mientras que la compuerta de actualización (\textit{update gate}) controla cuánto cambiará el estado basado en la nueva entrada. Esta compuerta de actualización (cuando está apagada) hace posible (y mucho más fácil) para la GRU el poder recordar información por un largo periodo de tiempo y es la razón de que las GRUs (y las LSTMs) desempeñen mejor que unidades recurrentes simples.
+RNNbruit utilise les unités récurrentes fermées (GRU) parce que celles-ci ont un meilleur fonctionnement que les LSTM pour cette tâche et demandent moins de ressources de calcul (CPU et mémoire). En comparant les avec les unités récurrentes simples, les GRU ont deux portes supplémentaires. La porte de redémarrage (\textit{reset gate}) vérifie si l’état (mémoire) est utilisé dans le calcul du nouvel état, alors que la porte de mise à jour (\textit{update gate}) contrôle combien va changer l’état basé sur la nouvelle entrée. Grace a la  porte de mise à jour (lorsqu’elle est éteinte) le GRU a le pouvoir de se rappeler de l’information pendant une période de temps plus longue et est la raison porque laquelle les Gru (et le LSTM) exécutent d’une meilleur façon les unités récurrentes simples.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.7]{simple_vs_gru.png}
-    \caption{Comparación de una unidad simple recurrente con una GRU. La diferencia está en las compuertas $r$ y $z$ de la GRU, que hacen posible el aprendizaje de patrones a largo plazo. Ambas son suiches suaves (\textit{soft switches}, con valores entre 0 y 1) computados basados en el estado previo de toda la capa y las entradas, con una función de activación sigmoide. Cuando la compuerta de actualización $z$ está en la izquierda, entonces el estado puede permanecer constante sobre un largo periodo de tiempo $-$ hasta que una condición cause que la compuerta $z$ cambie a la derecha.} 
+    \caption{Comparaison d’une unité simple récurrente avec un GRU. La différence se trouve sur les portes $r$ er $z$ de la GRU, qui rendent possible l’apprentissage des patrons a long therme. Toutes les deux sont des interrupteurs doux (\textit{soft switches} avec de valeurs comprises entre 0 et 1) calculés sur l’état antérieur de tout la couche et les entrées, avec une fonction d’activation sigmoïde. Lorsque la porte de mise à jour $z$ est à gauche, alors l’état peut rester constant sur une longue période de temps $-$ jusqu’à  qu’une condition entraine que la porte $z$ change vers la droite.} 
 \end{figure}
+Grace au succès du deep learning, il est, maintenant, populaire de « tirer » des réseaux de neurones deep a un problème complet. Ces approches sont connues sous le nom de \textit{end-to-end} $-$ où il s’agit de neurones du début à la fin. De plus, ils ont été appliqués au \href{https://arxiv.org/pdf/1412.5567.pdf}{reconnaissance de la voix \textit{(speech recognition)}} et au \href{https://deepmind.com/blog/article/wavenet-generative-model-raw-audio}{synthese de la voix (\textit{speech synthesis})}. D’une part, ces systèmes \textit{end-to-end} optimales, tanto anti-productif en termes de ressources. Par exemple, certaines approches d’atténuation  ou d’élimination du bruit utilisent des milliers de neurones et de décennies de millions des poids  (\textit{weights}) pour réaliser l’atténuation. Il ne s’agit pas uniquement d’un problème de cout de calcul, mais aussi de taille propre du modèle, où il y a des milliers de lignes de code et de décennies de mégabytes (ou plus) de poids de neurones.  
 
-Gracias al éxtio del deep learning, ya es popular "tirar" redes neuronales deep a un problema entero. Estos enfoque se le conoce como \textit{end-to-end} $-$ en donde son neuronas de principio a fin. Estos enfoques \textit{end-to-end} han sido aplicados a \href{https://arxiv.org/pdf/1412.5567.pdf}{reconocimiento de voz \textit{(speech recognition)}} y a \href{https://deepmind.com/blog/article/wavenet-generative-model-raw-audio}{síntesis de voz (\textit{speech synthesis})}. Por una parte, estos sistemas \textit{end-to-end} han probado qué tan poderosas pueden ser las redes neuronales deep. Por otra parte, estos sistemas pueden ser tanto suboptimales, y antiproducentes en términos de recursos. Por ejemplo, algunos enfoques de supresión de ruido usan miles de neuronas y deceneas de millónes de pesos (\textit{weights}) para realizar la supresión. El inconveniente no es solo el costo computacional, sino también el tamaño del propio modelo, donde se tienen miles de líneas de código y decenas de megabytes (o más) de pesos de neuronas.
-
-
-Por esta razón el método RNNbruit utiliza un \textbf{enfoque híbrido}: mantener todo el procesamiento básico de señal que igual es necesario (no dejar que una red neuronal intente emularlo), pero dejar que la red neuronal aprenda todas las partes complicadas que requieren de configuración sin fin en paralelo al procesamiento de señal.
+Pour cette raison, la méthode de RNNbruit utilise une \textit{approche hybride} : maintenir tout le processus basique du traitement de signal (empêche que le réseau de neurones essaye de l’émuler) mais laisser que le réseau de neurones apprenne toutes les parties compliquées qui demandent d’une configuration sans fin en parallèle au processus du traitement du signal.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.7]{Block_Diagram.png}
-    \caption{Diagrama de bloques, en donde la red neuronal es representada por el bloque RNN y todo el enfoque deep corresponde a la columna más a la derecha, el resto hacen parte del procesamiento básico de señal. Esto evidencia el enfoque híbrido trabajando en paralelo.}
+    \caption{Diagramme de blocs, où le réseau de neurones est représenté par le bloque RNN et toute l’approche deep correspond à la colonne de droite, le reste fait partie du processus du traitement du signal. Ceci met en évidence l’approche hybride qui travaille en parallèle.}
     \label{Figure 16}
 \end{figure}
 
-Otro aspecto diferente a algunos de los trabajos existentes de supresión de ruido con deep learning es que se apunta a la comunicación en tiempo real en vez del reconocimiento de voz, por lo que no se puede permitir mirar hacia adelante más que unos pocos milisegundos (en este caso $10 ms$).
+Un autre aspect diffère à certains des travaux existant sur l’atténuation du bruit avec le deep learning est qu’il vise une communication en temps réel au lieu d’une reconnaissance de la voix. Par conséquent, il ne peut pas regarder vers l’avant pas plus de quelques millisecondes (dans ce cas $10 ms$).
 \medskip
 
-\paragraph{\textbf{Definición del problema}}
+\paragraph{\textbf{Définition du problème}}
 \hfill\\
 \hfill
-
-Para evitar tener un gran número de salidas $-$ y por lo tanto, un gran número de neuronas $-$ el método se diseñó para que no trabajara directamente con muestras (\textit{samples}) o con un espectro. En cambio, se consideran \textit{bandas} (\textit{bands}) de frecuencia que siguen la escala de Bark, una escala de frecuencia que coincide con cómo percibimos los sonidos. Logrando así usar un total de 22 bandas, en vez de 480 valores espectrales (complejos) que se hubieran tenido que considerar.
+Pour éviter la création d’un grand nombre de sortir $-$ et par conséquent, un grand nombre de neurones $-$ la méthode a été créé pour quelle ne travaille pas directement avec des échantillons (\textit{samples}) ou un spectre. Au contraire, elle considère des \textit{groupes} (\textit{bands}) de fréquences qui suivent l’échelle de Bark. Une échelle de fréquences qui coïncide avec la façon dont nous percevons les sons. Arrivant, ainsi, a utilisé un total de 22 groupes, au lieu de 428 valeurs spectrales (complexes) qui aurait dû être considéré.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.25]{bands.png}
-    \caption{Comparación de las bandas Opus vs la escala de Bark actual. Para RNNbruit, se usa Opus como base. Dado que se superponen las bandas, los límites entre las bandas de Opus se convierten en el centro de las bandas superpuestas de RNNbruit. Las bandas son más anchas a alta frecuencia porque el oido tiene menor resolución de frecuencia ahí. A bajas frecuencias, las bandas son más estrechas, pero no tan anchas como las de la escala de Bark porque entonces no se tendrían suficientes datos para hacer buenos estimados.} 
+    \caption{Comparaison de groupes Opus et l’échelle de Bark. Pour RNN bruit, on utilise Opus comme base. Etant donné qu’on superpose les groupes, les limites sont que les groupes d’Opus se transforment au centre des groupes superposé de RNNbruit. Les groupes sont plus larges à haute fréquence parce qu’ouïe a une petite résolution de fréquence pour ces hautes fréquences. A bases fréquences, les groupes sont plus étroites, mais pas aussi larges comme celles de l’échelle de Brak parce que dans ce cas, on n’aurait pas accès de donné pour faire des estimations.} 
 \end{figure}
-
-Es claro que no se puede reconstruir un audio tan solo usando 22 bandas de energía. Pero lo que sí se puede hacer es computar una ganancia que aplicar a la señal para cada una de esas bandas. Una forma simple de imaginarlo es pensar en usar un ecualizador de 22 bandas y rápidamente cambiar el nivel o volumen para cada banda para que atenuar el ruido, pero dejar pasar la señal.
+Il est clair qu’on ne peut pas reconstruire un audio avec seulement 22 groupes d’énergies. Mais ce qu’on peut faire est calculer un gain qu’il faut applique au signal pour chacun de ses groupes. Une manière simple de l’imaginer est de pensé a utilisé un égaliseur de 22 groupes et rapidement changer le niveau ou le volume pour chaque groupe pour atténuer le bruit mais laisser passer le signal. 
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.2]{22bEq.jpg}
-    \caption{Ecualizador gráfico vintage \href{https://www.canuckaudiomart.com/details/649586296-vintage-audio-control-c-22-octave-10-band-equalizer/images/2554905/}{AudioControl C-22}. Cada uno de los botones verticales que suben y bajan (\textit{faders}) representan el volumen de una frecuencia en particular; RNNbruit funciona de forma similar.} 
+    \caption{Egaliseur graphique vintage \href{https://www.canuckaudiomart.com/details/649586296-vintage-audio-control-c-22-octave-10-band-equalizer/images/2554905/}{AudioControl C-22}.Chacun des butons verticaux qui montent et descendent (\textit{faders}) représentent le volumen d’une fréquence en particulier; RNNbruit fonctionne de façon similaire.} 
 \end{figure}
-
-Hay varias ventajas de trabajar con ganancias por banda:
+Il y a plusieurs avantages de travailler avec des gains par groupe :
 \begin{enumerate}
-    \item Se obtiene un modelo más simple porque se computan menos bandas.
-    \item Se hace imposible crear los llamados \href{https://www.vocal.com/noise-reduction/musical-noise/}{"artefactos de ruido musical" (\textit{musical noise artifacts})}, donde únicamente un tono logra pasar mientras sus "vecinos" son atenuados. Estos artefactos son comunes en la supresión de ruido y son bastante molestos. Con bandas suficientemente anchas, se deja pasar toda la banda completa o se corta por completo.
-    \item La optimización del modelo. Como las ganancias de las bandas siempre están acotadas entre $0$ y $1$, simplemente usar una función de activación sigmoide (cuya salida también está entre $0$ y $1$) para computarlas garantiza que nunca se puede hacer algo realmente estúpido, como agregar ruido que no estaba ahí en primer lugar.
+    \item On obtient un modèle plus simple parce qu’on calcul moins de groupes
+ \item Il est impossible de créer les  \href{https://www.vocal.com/noise-reduction/musical-noise/}{"artefacts de bruit musical" (\textit{musical noise artifacts})}, où uniquement un ton arrive a passé alors que ses « voisins » sont atténués. Ces artefacts sont communs dans l’atténuation du bruit et sont très embêtants. Avec des groupes suffisamment larges, on laisse passer tout le groupe complet ou on le coupe en entier.
+    \item L’optimisation du modèle. Comme les gains de groupes sont toujours organisé entre $0$ et $1$. Il suffit d’utiliser une fonction d’activation sigmoïde (dont la sortie est entre $0$ et $1$) pour les calculer. Ça garantie qu’on ne peut jamais faire quelque chose de stupide, comme ajouter du bruit qui n’était pas présent.  
 \end{enumerate}
-
-La desventaja principal de la menor resolución que se obtiene al usar bandas es que no se tiene un resolución lo suficientemente fina como para suprimir el ruido entre los armónicos de tono (\textit{pitch harmonics}). Afortunadamente, no es tan importante y se logra con procesamiento de señal básico tal y como se muestra en el módulo \textit{Pitch filtering} en \ref{Figure 16}.
+Le désavantage principal de la mineur résolution, qu’on obtient en utilisant les groupes, est qu’on n’a pas une résolution suffisamment fine pour atténuer le bruit entre les harmoniques du ton (\textit{pitch harmonics}). Heureusement, ceci n’est pas très important et on peut le réaliser avec un signal basique comme on peut voir dans le modèle \textit{Pitch filtering} sur la \ref{Figure 16}.
 
 \medskip
-\paragraph{\textbf{Arquitectura deep}}
+\paragraph{\textbf{Architecture deep}}
 \hfill\\
-Como la salida que se computa se basa en 22 bandas, no tiene sentido tener mayor frecuencia de resolución en la entrada, entonces se utilizan las mismas 22 bandas para enviar enviar la información espectral a la red neuronal. Debido a que \href{https://www.britannica.com/science/dynamic-range}{el audio tiene un gran rango dinámico}, es mejor computar el $log$ de la energía en vez de enviar la energía directamente a la red. Se usa un proceso de decorrelación (\textit{decorrelate}) de las características usando una \href{https://dsp.stackexchange.com/questions/27810/how-to-understand-the-de-correlation-property-of-dct-what-does-de-correlation-m}{transformada discreta de coseno (DCT, \textit{Discrete Cosine Transform})}. Resultando en un \href{https://es.wikipedia.org/wiki/Cepstrum}{\textit{cepstrum}} basado en la escala de Bark, el cual está altamente relacionado con los Coeficientes Cepstrales de Frecuencia-Mel (MFCC, \href{https://en.wikipedia.org/wiki/Mel-frequency_cepstrum}{\textit{Mel-Frequency Cepstral Coefficients})} que son comunmente usados en reconocimiento de voz.
+Comme la sortie est calculé sur 22 groupes, il n’y a pas de sens d’avoir une plus grande fréquence de résolution de l’entrée. Alors on utilise les mêmes 22 groupes pour éviter d’envoyer l’information spectral au réseau de neurones. Du fait que \href{https://www.britannica.com/science/dynamic-range}{l’audio un grand rand dynamique}, il est préférable de calculer le $logarithme$ de l’énergie au lieu d’envoyer l’énergie directement. On utilise un processus de décorrélation (\textit{decorrelate}) des caractéristiques en utilisant une \href{https://dsp.stackexchange.com/questions/27810/how-to-understand-the-de-correlation-property-of-dct-what-does-de-correlation-m}{tranformée discrète du cosinus (DCT, \textit{Discrete Cosine Transform})}. Résultant dans une \href{https://es.wikipedia.org/wiki/Cepstrum}{\textit{cepstrum}} basé sur l’échelle de Bark, lequel est très lié avec les Coefficiente Cepstrales de fréquence-Mel (MFCC, \href{https://en.wikipedia.org/wiki/Mel-frequency_cepstrum}{\textit{Mel-Frequency Cepstral Coefficients})}qui sont habituellement utilisé dans la reconnaissance de la voix.
 
-
-En adición a los coeficientes, RNNbruit también incluye:
+En addition au coefficients, RNNbruit comprend également :
 
 \begin{itemize}
-    \item La primera y segunda derivada de los primeros 6 coeficientes \textbf{(12 características de entrada)}
-    \item El periodo del tono ($1$/$frecuencia fundamental$) \textbf{(1 característica de entrada)}
-    \item La ganancia del tono (\textit{voicing strength}) en 6 bandas \textbf{(6 características de entrada)}
-    \item Un valor especial para detección de voz \textbf{(1 característica de entrada)}
+    \item La première et la deuxième dérivée de 6 premiers coefficients  \textbf{(12 caractéristiques de l’entrée)}
+    \item La période du ton ($1$/\textit{fréquence fondamental}) \textbf{(1 caractéristique de l’entrée)}
+    \item Le gain du ton  (\textit{voicing strength}) en 6 groupes \textbf{(6 caractéristiques de l’entrée)}
+    \item Une valeur spéciale pour la détection de la \textbf{(1 caractéristique de l’entrée)}
 \end{itemize}
 
 \hfill\\
-Lo que quiere decir que RNNbruit usa en total 42 características de entrada a la red neuronal recurrente, lo cual se observa en la imagen a continuación.
+Ce qui veut dire que RNNbruit utilise au total 42 caractéristiques de l’entrée au réseau de neurones récurrent, on peut voir cela dans l’image ci-dessous
+
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.7]{topology.png}
-    \caption{Topología de la red neuronal que usa RNNbruit. Cada caja representa una capa de neuronas, con el número de unidades indicado en paréntesis. Las capas densas (\textit{Dense}) son capas no recurrentes, mientras que claramente, las GRU sí lo son. Una de las salidas de la red es un conjunto de ganancias que aplicar a las 22 bandas de frecuencias (\textit{Gains outputs (22)}). La otra salida es la probabilidad de activación \textit{VAD output(1)}), que no se utiliza en la supresión de ruido pero que es un subproducto útil de la red.} 
+    \caption{Topologie d’un réseau de neurones qui utilise RNNbruit. Chaque boite représente une couche de neurones, avec le numéro d’unités indiqué entre parenthèses. Les couches denses (\textit{Dense}) sont des couches non récurrentes, cependant les GRU sont clairement récurrentes. Une des sorties du réseau est un ensemble de gain qu’il faut appliquer aux 22 groupes de fréquences  (\textit{Gains outputs (22)}). L’autre sortie est probabilité d’activation  \textit{VAD output(1)}), quo n’est pas utilisé dans le processus d’atténuation du bruit mais qui est un sous-produit du.} 
 \end{figure}
+L’architecture deed utilisé s’inspire dans l’approche traditionnel de l’atténuation du bruit comme on peut voir dans la \ref{Figure 14}. Il faut remarquer que dans ce cas, chacun des 3 modules utilise des réseaux de neurones et ils se trouvent encadré par des lignes pointillées bleus. La plupart du travail est réalisé par les 3 couches de GRU. Aussi, il faut remarquer que dans le cas des réseaux de neurones, il n’y a pas de preuves qu’on utilise les couches de la façon qu’on prétend, mais le fait que la topologie fonctionne d’une meilleure façon que pour les autres qui ont été essayé par les créateurs de la méthode, fait que ça soit raisonnable de penser qu’elle se comporte de la façon qu’elle a été créer. 
 
-La arquitectura deep usada está inspirada en el enfoque tradicional de supresión de ruido como el que se muestra en \ref{Figure 14}. Note que en este caso cada uno de los 3 módulos usa redes neuronales y se muestran enmarcados en líneas azules punteadas. La mayoría del trabajo es realizado por las 3 capas de GRU. Cabe resaltar que, por supuesto, así como usualmente es el caso con las redes neuronales no se tienen pruebas de que la red está usando las capas de la forma en la que se pretende, pero el hecho de que la topología funcione mejor que otras intentadas por los creadores del método, hace que sea razonable pensar que se comporta como fue diseñado.
-
-\paragraph{\textbf{Código e implementación}}
-El código del método es de libre acceso y se encuentra disponible en el repositorio de GitHub \href{https://github.com/xiph/rnnoise}{xiph/rnnoise}. Todo el diseño y entrenamiento de la red neuronal es realizado en Python usando la libreria de deep learning \href{https://keras.io/}{Keras}, pero todo el código de ejecución es realizado en C bajo una \href{https://es.wikipedia.org/wiki/Licencia_BSD}{licencia BSD} un tipo de sistema operativo tipo Unix.
-
-El sistema operativo escogido para esta labor fue \href{https://ubuntu.com/download/desktop}{Ubuntu 20.04.1} un sistema operativo (64-bit) open source. Sin embargo, debido a que este no es el sistema operativo de preferencia personal se decidió utilizar una máquina virtual usando el software \href{https://www.virtualbox.org/}{Oracle VirtualBox 6.1} (otro software open source) utilizando como sistema operativo principal o \textit{host} Microsoft Windows 10 Home Single Language. A continuación se muestra una imagen de la máquina virtual junto con las características seleccionadas. Note que entre las características se muestra que hay una carpeta compartida entre el \textit{host} y la máquina virtual. Esto para facilitar los archivos de entrada y salida del método.
+\paragraph{\textbf{Code et implémentation}}
+Le code de la méthode est de libre accès et est disponible sur le répertoire de GitHub \href{https://github.com/xiph/rnnoise}{xiph/rnnoise}.Tout le desing et l’entrainement du réseau de neurones est écrit en Python en utilisant la librairie propre au deep learning \href{https://keras.io/}{Keras}, mais tout le code d’exécution est écrit en C sous une \href{https://es.wikipedia.org/wiki/Licencia_BSD}{licencia BSD} un type de système d’exploitation type Unix.
+Le système d’exploitation choisi pour ce travail est \href{https://ubuntu.com/download/desktop}{Ubuntu 20.04.1} un système d’exploitation (64-bit) open source. Cependant, du fait que ce système d’exploitation n’est pas le système d’exploitation de préférence personnelle, on a décidé d’utiliser une machine virtuelle en employant le software \href{https://www.virtualbox.org/}{Oracle VirtualBox 6.1} (une autre software open source), en utilisant comme système d’exploitation principal ou \textit{host} Microsoft Windows 10 Home Single Language. Sur l’image ci-dessous, on peut voir la machine virtuelle choisit, ainsi que les caractéristiques choisies. Il faut remarque qu’entre les caractéristiques on peut voir qu’il y a un dossier partager entre le \textit{host} et la machine virtuelle. Ceci est pour rendre plus facile l’entrée et la sortie des fichiers par la méthode.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.45]{VM1.png}
-    \caption{Características de la máquina virtual de Ubuntu implementada} 
+    \caption{ Caractéristiques de la machine virtuelle de Ubuntu implémenté} 
 \end{figure}
 
-A continuación se muestra una captura de pantalla del funcionamiento de la máquina virtual.
+Ci-dessous, on peut voir une capture d’écran du fonctionnement de la machine virtuelle.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.45]{VM2.png}
-    \caption{Máquina virtual encendida} 
+    \caption{Machine virtuelle allumé} 
 \end{figure}
 \hfill\\
-Luego de descargar el código del repositorio mencionado anteriormente, se siguieron las instrucciones del \texttt{README} disponible allí, con el fin de "activar" el método. Las instrucciones se muestran a continuación.
+Après avoir téléchargé le code du repositoire GitHub précèdent, on a suivi les instructions du \texttt{README} disponible sur le répertoire, afin fin « d’activer » la méthode. Les instructions se trouvent ci-dessous.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.7]{VM3.png}
-    \caption{Instrucciones para activar o compilar el método RNNbruit} 
+    \caption{Instructions pour activer ou compiler la méthode de RNNbruit} 
 \end{figure}
 
-Siguiendo las instrucciones se muestra un ejemplo de la ejecución del método RNNbruit usando como ejemplo el audio de entrada \texttt{AW0,3.wav} y especificando el nombre del audio de salida como \texttt{SALIDA.wav}.
+En suivant les instructions, on peut voir un exemple de l’exécution de la méthode RNNbruit en utilisant comme exemple l’audio en entrée \texttt{AW0,3.wav} et en spécifiant le nombre de l’audio de sortie \texttt{SALIDA.wav}.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.45]{VM4.png}
-    \caption{Ejecución del método RNNbruit} 
+    \caption{Exécution de la méthode RNNbruit } 
 \end{figure}
 \hfill\\
 
-Observe en la imagen a continuación que la ejecución del método se realizó exitosamente y el archivo \texttt{SALIDA.wav} fue creado.
-
+On observe sur l’image ci-dessous que l’exécution de la méthode s’est réalisée avec succès et le fichier \texttt{SALIDA.wav} a été créé.
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.4]{VM5.png}
-    \caption{Audio de entrada y audio de salida resultante.} 
+    \caption{Audio en entrée et audio résultant en sortie} 
 \end{figure}
 
-Aunque el audio resultante aunque esté almacenado en formato \texttt{.wav} las instrucciones del método especifican que en realidad se está almacenando un archivo tipo \texttt{RAW PCM 16-bit}, por lo que si se intenta abrir o reproducir se produce un error. Observe este comportamiento a continuación.
+Même si l’audio résultant est enregistré sous forma \texttt{.wav}, les instructions de la méthode disent qu’en réalité ils sont enregistrés dans un fichier du typo \texttt{RAW PCM 16-bit}. Par conséquent, si on essaye de l’ouvrir ou de le reproduire, il se produit une erreur. On peut voir ce comportement sur l’image ci-dessous. 
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.4]{VM6.png}
-    \caption{Error obtenido al intentar reproducir el audio de salida} 
+    \caption{Erreur obtenu lorsqu’on essaye de reproduire l’audio résultant} 
 \end{figure}
 
-Para corregir el formato del audio de salida, se regresa al sistema operativo \textit{host}, se utiliza el software open source \href{https://www.audacityteam.org/}{Audacity 2.4.2} y se toma el archivo de la carpeta compartida con la máquina virtual. Para abrirlo de forma adecuada en Audacity se usan las opciones \texttt{File/import/Raw Data...} tal y como se muestra a continuación.
+Pour corriger ce format de l’audio en sorte, on revient sur le système d’exploitation \textit{host}, on utilise le software open source \href{https://www.audacityteam.org/}{Audacity 2.4.2} et on prend le fichier du dossier partager avec la machine virtuelle. Pour l’ouvrir de la bonne façon sur Audacity, on utiliser les options \texttt{File/import/Raw Data...} comme on peut le voir dans l’image ci-dessous. 
 
 %imagen
  \begin{figure}[H]
  \centering
-    \includegraphics[scale=0.45]{VM7.png}
-    \caption{Import del audio de salida en Audacity}
+    \includegraphics[scale=0.4]{VM7.png}
+    \caption{Importation de l’audio de sortie sur Audacity}
 \end{figure}
-
-Se selecciona el archivo de la carpeta compartida.
+On sélectionne le fichier du dossier partager.
 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.45]{VM8.png}
 \end{figure}
-
-Y se importa con las respectivas configuraciones.
-
+Et on l’importe avec les respectives configurations. 
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.6]{VM9.png}
 \end{figure}
 
-Importando exitosamente el audio de forma reproducible en Audacity.
+En important avec succès l’audio de façon qu’il soit reproductible sur Audacity.
 
 %imagen
  \begin{figure}[H]
@@ -1085,21 +1387,21 @@ Importando exitosamente el audio de forma reproducible en Audacity.
     \includegraphics[scale=0.4]{VM10.png}
 \end{figure}
 
-El cual puede ser exportado correctamente simplemente al seguir las opciones \texttt{File/Export/Export as WAV} como se muestra a continuación.
-
+Lequel peut être exporter avec succès tout simplement en suivant les options \texttt{File/Export/Export as WAV} comme on peut voir sur l’image ci-dessous. 
+.
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.4]{VM11.png}
 \end{figure}
 
-Generando satisfactoriamente el audio de salida de forma reproducible.
-
+En générant de manière satisfaisante l’audio de sortie en format reproductible.
 %imagen
  \begin{figure}[H]
  \centering
     \includegraphics[scale=0.5]{VM12.png}
 \end{figure}
+
 
 \newpage
 \section{Résultats et comparaison des méthodes}
@@ -1107,43 +1409,43 @@ Les méthodes ont été implémenter de manière qualitative et quantitative. Po
 
 \subsection{Résultats quantitatifs}
 Dans le tableau \ref{table:t1} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit blanc a l’enregistrement audio et on le filtre avec chaque méthode.
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
     \hline
     Sans méthode & 80.658 \\
-    Wienner & 44.218 \\
+    Wiener & 44.218 \\
     Butter T & 10 \\
     RNNbruit & 9.9668 \\
     \end{tabular}
-    \caption{Résultats des méthodes pour 30\% du bruit blanc}
+    \caption{Résultats des méthodes pour 30\% du bruit Blanc}
     \label{table:t1}
 \end{table}
 \hfill \\
 Dans le tableau \ref{table:t2} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit rose a l’enregistrement audio et on le filtre avec chaque méthode.
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
     \hline
     Sans méthode & 39.442 \\
-    Wienner & 44.082 \\
+    Wiener & 44.082 \\
     Butter T & 35 \\
     RNNbruit & 11.493 \\
     \end{tabular}
-    \caption{Résultats des méthodes pour 30\% du bruit rose}
+    \caption{Résultats des méthodes pour 30\% du bruit Rose}
     \label{table:t2}
 \end{table}
 \hfill \\
 Dans le tableau \ref{table:t3} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit rouge a l’enregistrement audio et on le filtre avec chaque méthode.
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Marron (30\%)} \\
     \hline
     Sans méthode & 53.969 \\
-    Wienner & 36.209 \\
+    Wiener & 36.209 \\
     Butter T & 35 \\
     RNNbruit & 7.7496 \\
     \end{tabular}
@@ -1156,46 +1458,46 @@ Premièrement, en étudiant les résultats obtenus par l'implémentation du filt
 
 Dans un deuxième temps, le cas de la méthode hybride du RNNbruit, nous observons que cette méthode est belle et bien convenable pour les différents types de bruit additionnés. En effet, nous constatons une atténuation du bruit considérable dans chacun des cas. De plus, nous remarquons que cette méthode ne gêne pas la transmission du signal sonore, en d'autre thermes cette méthode lise et "purifie" le signal orignal. Nous pouvons expliquer ce comportement par la nature adaptative de la méthode, dû au fait de l'implémentation de réseau de neurones récurrents pour faire face au bruit non harmonique. Cependant, la partie traditionnelle de cette méthode dite hybride se charge du bruit harmonique comme nous l'avant vue précédemment dans la partie théorique.
 
-Finalement, lorsque nous analysons les résultats obtenus en utilisant le filtre adaptatif de Weiner, nous apercevons que cette méthode de filtrage numérique a des meilleurs résultats sur du bruit blanc. Or, en effectuant une analyse auditive, nous pourrions penser que ce filtrage est bien plus efficace avec le bruit marron ou le bruit rose, nous pouvions affirmer théoriquement que ‘est avec le bruit blanc qu’il est plus efficace. En effet, en employant cette méthode nous introduisons des nouveaux types de bruits que nous ne considérerons pas dans notre analyse. Par exemple, dans le filtrage de l’enregistrement audio avec du bruit marron, nous pouvons avoir l’impression que le résultat est nettement plus compressible qu’avec du bruit blanc. Cependant, en regardant les résultats de l’analyse nous nous rends compte que l’audio résultant a perdu de l’intensité sonores, c’est-à-dire que l’amplitude de son gain en fréquence a considérablement diminuer. Cette méthode, théoriquement parlant, nous est convenable dans la mesure ou elle permet un filtrage du bruit blanc, mais elle rencontre ses limites avec les 2 autres types de bruit étudiés.
+Finalement, lorsque nous analysons les résultats obtenus en utilisant le filtre adaptatif de Weiner, nous apercevons que cette méthode de filtrage numérique a des meilleurs résultats sur du bruit blanc. Or, en effectuant une analyse auditive, nous pourrions penser que ce filtrage est bien plus efficace avec le bruit marron ou le bruit rose, nous pouvions affirmer théoriquement que ‘est avec le bruit blanc qu’il est plus efficace. En effet, en employant cette méthode nous introduisons des nouveaux types de bruits que nous ne considérerons pas dans notre analyse. Par exemple, dans le filtrage de l’enregistrement audio avec du bruit marron, nous pouvons avoir l’impression que le résultat est nettement plus compressible qu’avec du bruit blanc. Cependant, en regardant les résultats de l’analyse nous nous rends compte que l’audio résultant a perdu de l’intensité sonores, c’est-à-dire que l’amplitude de son gain en fréquence a considérablement diminuer. Cette méthode, théoriquement parlant, nous est convenable dans la mesure où elle permet un filtrage du bruit blanc, mais elle rencontre ses limites avec les 2 autres types de bruit étudiés.
 
 
 \subsection{Résultats qualitatifs}
 \hfill \\
-Dans le tableau \ref{table:t4} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit blanc au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t4} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage pour donner suite à un ajout de 30\% de bruit blanc au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
     \hline
-    Wienner &  4\\
+    Wiener &  4\\
     Butter T &  8 \\
     RNNbruit &  8.5 \\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit blanc}
+    \caption{Qualification des méthodes pour 30\% du bruit Blanc}
     \label{table:t4}
 \end{table}
 \hfill \\
-Dans le tableau \ref{table:t5} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit rose au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.  
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t5} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage pour donner suite à un ajout de 30\% de bruit rose au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.  
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
     \hline
-    Wienner & 5 \\
+    Wiener & 5 \\
     Butter T &  6 \\
     RNNbruit &  8 \\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit rose}
+    \caption{Qualification des méthodes pour 30\% du bruit Rose}
     \label{table:t5}
 \end{table}
 \hfill \\
-Dans le tableau \ref{table:t6} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit rouge au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t6} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage pour donner suite à un ajout de 30\% de bruit rouge au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Marron (30\%)} \\
     \hline
-    Wienner & 6  \\
+    Wiener & 6  \\
     Butter T &  4.5 \\
     RNNbruit & 8 \\
     \end{tabular}
@@ -1208,13 +1510,13 @@ Dans le tableau \ref{table:t6} On peut voir la classifications que nous avons do
 \newpage
 
 \section{Méthodes modifiées}
-En esta sección se realizan las descripciones e implementaciones de las modificaciones propuestas para cada uno de los métodos.
+Sur cette section, on réalise les description et implémentation des modifications proposés pour chaque méthode. 
 
 \subsection{\textbf{Butterworth modifiée}}
 
 \subsubsection{Modifications de la fonction Matlab butter}
 
-fonction Dans un premier temps, nous avons choisis de de faire une modification de la méthode Matlab Butter, méthode que nous utilisons pour la création du filtre passe-bas avec un approximation de Butterworth. Pour cela, nous avons ouvert la méthode ou plutôt de script de la fonction butter avec la ligne de code suivante :
+Dans un premier temps, nous avons choisis de de faire une modification de la méthode Matlab Butter, méthode que nous utilisons pour la création du filtre passe-bas avec un approximation de Butterworth. Pour cela, nous avons ouvert la méthode ou plutôt de script de la fonction butter avec la ligne de code suivante :
 
 \[ \texttt{edit butter}\]
 
@@ -1236,7 +1538,7 @@ Lorsque nous rentrant cette ligne de code, Matlab nous renvois le script de la f
 \end{figure}
 
 
-Ensuite, nous avons cherché a modifié cette méthode sur les parties concernant les filtres passe bas. Il faut se rappeler que les filtres de butterworth sont de l’ordre n, ceci est la raison de notre modification. Nous voulons modifier l’ordre du filtre pour voir si cette modification entraine un changement dans les signaux de sortie obtenues. Pour cela, nous changeant l’ordre n des filtres passe bas de butterworth pour l’ordre 2n + 1. L’image ci-dessous montre une des modifications que nous avons fait dans le code.
+Ensuite, nous avons cherché a modifié cette méthode sur les parties concernant les filtres passe bas. Il faut se rappeler que les filtres de Butterworth sont de l’ordre n, ceci est la raison de notre modification. Nous voulons modifier l’ordre du filtre pour voir si cette modification entraine un changement dans les signaux de sortie obtenues. Pour cela, nous changeant l’ordre n des filtres passe bas de Butterworth pour l’ordre 2n + 1. L’image ci-dessous montre une des modifications que nous avons fait dans le code.
 
 %imagen
 %buttermod3
@@ -1246,7 +1548,7 @@ Ensuite, nous avons cherché a modifié cette méthode sur les parties concernan
 \end{figure}
 
 
-Après avoir effectué ces modifications nous procédons à sauvegarder les modifications, c'est à dire à sauvegarder le script butter.m sur lequel nous avons travaillé. Or, lorsque nous cliquons sur le buton "save" de Matlab, le message suivant nous apparait :
+Après avoir effectué ces modifications nous procédons à sauvegarder les modifications, c'est à dire à sauvegarder le script butter sur lequel nous avons travaillé. Or, lorsque nous cliquons sur le buton "Save" de Matlab, le message suivant nous apparait :
 
 %imagen
 %buttermod4
@@ -1258,7 +1560,7 @@ Après avoir effectué ces modifications nous procédons à sauvegarder les modi
 
 Ce message veut dire que la fonction Matlab butter à une certaine privacité ce qui empêche toute modification de celle-ci. Par suite de cette découverte nous décidons d’effectuer la modification de la méthode en jouant avec la fréquence de coupure de celle-ci qui peut être considéré comme un paramètre externe de la fonction.
 
-\subsubsection{Modification du filtre de Butterworth à partir de la fréquence}
+\subsubsection{Modification du filtre de Butterworth à partir de la fréquence de coupure}
 Dans un deuxième temps, nous décidons d'effectuer la modification du filtre de passe-bas avec une approximation de Butterworth en jouant avec la fréquence de coupure. Tout d'abord, nous créant le filtre avec l'outil sptool de Matlab en rentrant la ligne de code ci-dessous :
 
 \[\texttt{sptool}\]
@@ -1273,7 +1575,7 @@ Après avoir rentrée cette ligne de code une fenêtre dédier à l'analyse de s
 \end{figure}
 
 
-Nous allons nous intéresser aux colonnes Signals et Filters. Tout d'abords, la colonne Filters nous permet de créer un nouveau filtre. Pour cela, nous cliquons sur le buton New en bas de la colonne. En cliquant sur ce buton, une nouvelle fenêtre s'ouvre nous permettant de créer un nouveau filtre. Nous allons créer un filtre passe-bas de Butterworth d'ordre 2 avec une fréquence de coupure de 200 Hz et une fréquence de sortie de 60000 Hz. L'image ci-dessous illustre comment nous avons procédés pour créer le filtre en question.
+Nous allons nous intéresser aux colonnes Signals et Filters. Tout d'abords, la colonne Filters nous permet de créer un nouveau filtre. Pour cela, nous cliquons sur le buton New en bas de la colonne. En cliquant sur ce buton, une nouvelle fenêtre s'ouvre nous permettant de créer un nouveau filtre. Nous allons créer un filtre passe-bas de Butterworth d'ordre 2 avec une fréquence de coupure de $200 Hz$ et une fréquence de sortie de $60000 Hz$. L'image ci-dessous illustre comment nous avons procédés pour créer le filtre en question.
 
 %imagen
 %buttermod6
@@ -1283,7 +1585,7 @@ Nous allons nous intéresser aux colonnes Signals et Filters. Tout d'abords, la 
 \end{figure}
 
 
-Premièrement dans l'onglet Reponse type nous choisissons le type de filtre que nous voulons, nous choisissons Lowpass pour dire que nous voulons un filtre passe-bas. Deuxièmement, dans l'onglet Desing Method nous choisissant la méthode que nous voulant, dans ce cas nous choisissons IIR Butterworth. Troisièmes dans l'onglet Filter Order, nous choisissons l'ordre du filtre, donc nous cochons l'option Specify Order et rentrant l'ordre que nous voulons étant un ordre 2. Finalement, nous rentrant la fréquence de sortie ($F_s$) et la fréquence de coupure ($F_c$) dans l'onglet Frequecy Specifications, et nous cliquons sur le buton Design Filter pour créer le filtre. 
+Premièrement dans l'onglet Réponse type nous choisissons le type de filtre que nous voulons, nous choisissons Lowpass pour dire que nous voulons un filtre passe-bas. Deuxièmement, dans l'onglet Desing Method nous choisissant la méthode que nous voulant, dans ce cas nous choisissons IIR Butterworth. Troisièmes dans l'onglet Filter Order, nous choisissons l'ordre du filtre, donc nous cochons l'option Specify Order et rentrant l'ordre que nous voulons étant un ordre 2. Finalement, nous rentrant la fréquence de sortie ($F_s$) et la fréquence de coupure ($F_c$) dans l'onglet Frequecy Specifications, et nous cliquons sur le buton Design Filter pour créer le filtre. 
 
 Nous constatons aussi que lorsque notre filtre est créé nous pouvons voir le digramme de Bode de celui-ci, ainsi que son diagramme de phase et son gabarit. 
 
@@ -1350,7 +1652,7 @@ Lorsque nous aurons effectué la lecture des signaux, la nouvelle fenêtre resse
 \end{figure}
 
 
-Maintenant, nous choisissons un des signaux entre les suivants : y, yw, yp, yb. Et nous cliquons sur la petite flèche qui sépare la colonne \texttt{Workspace Contents} et \texttt{Import As:}. Tout en bas nous changeons le nom du signal, dans la colonne \texttt{Name} et nous écrivons le nom \texttt{Original} (voir image ci-dessous) et nous cliquons sur le buton \texttt{OK}.
+Maintenant, nous choisissons un des signaux entre les suivants : \texttt{y, yw, yp, yb}. Et nous cliquons sur la petite flèche qui sépare la colonne \texttt{Workspace Contents} et \texttt{Import As:}. Tout en bas nous changeons le nom du signal, dans la colonne \texttt{Name} et nous écrivons le nom \texttt{Original} (voir image ci-dessous) et nous cliquons sur le buton \texttt{OK}.
 
 %imagen
 %buttermod12
@@ -1394,7 +1696,7 @@ Nous choisissons de nommé le signal de sortie comme \texttt{originalf} pour dir
     \item[] \textbf{Remarque :} Nous pouvons déjà constate une différence entre le spectre en fréquence du signal original et le spectre en fréquence du signal filtré.
 \end{itemize}
 
-A présent nous allons exporter le signal \texttt{originalf} afin de faire une comparaison entre celui-ci et le signal original, ce qui nous permettra de connaitre le pourcentage de bruit présent dans le signa de sortie suite au filtrage. 
+A présent nous allons exporter le signal \texttt{originalf} afin de faire une comparaison entre celui-ci et le signal original, ce qui nous permettra de connaitre le pourcentage de bruit présent dans le signa de sortie à la suite du filtrage. 
 
 Dans un premier temps, pour exporter le signal, nous allons sur l'onglet \texttt{File} et nous choisissons l'option \texttt{Export...}. Lorsque nous cliquons sur cette option la fenêtre suivante nus apparait:
 
@@ -1446,6 +1748,8 @@ Nous remarquons qu'un nouveau fichier \texttt{.wav} a été créer sur notre dos
 
 Troisièmement, nous allons étudier le pourcentage de bruit présent sur chaque signal contenant une addition de 30\% e bruit blanc, rose et rouge respectivement pour enfin sortir des conclusions concernant la modification faite. 
 
+\subsubsection{Résultats Quantitatifs}
+
 Pour effectuer la comparaison des pourcentages de bruit présent en chaque signal, nous employant la même méthode que précédemment, les images ci-dessous correspond au script Matlab utilisé après avoir créé les fichiers audios corresponds aux sorties des signaux filtrés. 
 
 %imagen
@@ -1463,12 +1767,11 @@ Pour effectuer la comparaison des pourcentages de bruit présent en chaque signa
     \includegraphics[scale=0.3]{b20.jpeg}
 \end{figure}
 
-
 Lorsque nous cliquons sur le buton \texttt{Run} Matlab nous revoit 3 tableaux différents. 
 
 Dans le premiers tableau (voir tableau ci-dessous), nous pouvons les résultats du filtrage du de la chanson avec une addition de 30\% de bruit blanc. Nous constatons qu'il y a un phénomène d'annulation de bruit, cela arrive lorsque 2 fréquences opposé s'ajoutent ce qui explique le peu de bruit blanc qu'on trouve dans le signal son filtrage. Lorsque nous filtrant par le premier filtre de Butterworth utilisée ($F_c = 1000 Hz$), nous remarquant que le pourcentage de bruit diminue peu par rapport au pourcentage initial. D'un autre côté, le pourcentage de bruit présent dans le signal filtré par le deuxième filtre de Butterworth ($F_c = 200 Hz$) est bien plus petit que celui du premier filtre et du signal original. Nous pouvons donc dire que cette modification est convenable pour l'atténuation du bruit blanc.
 
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
@@ -1477,13 +1780,13 @@ Dans le premiers tableau (voir tableau ci-dessous), nous pouvons les résultats 
     Butterworth &  2.4582\\
     Butterworth mod &  0.2574\\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit Blanc}
+    \caption{Résultats des méthodes pour 30\% du bruit Blanc}
     \label{table:t7}
 \end{table}
 
 Dans le deuxième tableau(voir tableau ci-dessous), nous pouvons les résultats du filtrage du de la chanson avec une addition de 30\% de bruit rose. Nous constatons que ce signal sans être filtré présente 34.855\% de bruit. Lorsque nous filtrant par le premier filtre de Butterworth utilisée ($F_c = 1000 Hz$), nous remarquant que le pourcentage de bruit diminue considérablement par rapport au pourcentage initial jusqu'á atteindre un pourcentage de bruit de 18.575\%. D'un autre côté, le pourcentage de bruit présent dans le signal filtré par le deuxième filtre de Butterworth ($F_c = 200Hz$) est bien plus grand que celui du premier filtre, mais plus petit que celui du signal orignal. Cette augmentation du pourcentage de bruit est dû au fait que le bruit rouge n'est pas un bruit avec des fréquence uniformes comme le bruit blanc, il est un brui décroisant, donc il y a des fréquences qui ne sont pas filtre ou ne sont pas bien filtre. De plus, on peut croire qu'il y a un nouveau bruit qui s'ajoute au signal mais cela reste une simple hypothèse à confirmer. Nous pouvons donc dire que cette modification n'est pas convenable pour l'atténuation du bruit rose si nous le comparant avec l'efficacité d'atténuation du premier filtre de Butterworth.
 
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
@@ -1492,33 +1795,229 @@ Dans le deuxième tableau(voir tableau ci-dessous), nous pouvons les résultats 
     Butterworth &  18.575\\
     Butterworth mod &  24.663\\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit Rose}
+    \caption{Résultats des méthodes pour 30\% du bruit Rose}
     \label{table:t8}
 \end{table}
 
 Dans le troisième tableau(voir tableau ci-dessous), nous pouvons les résultats du filtrage du de la chanson avec une addition de 30\% de bruit rouge. Nous constatons que ce signal sans être filtré pressente 35.874\% de bruit. Lorsque nous filtrant par le premier filtre de Butterworth utilisée ($F_c = 1000 Hz$), nous remarquant que le pourcentage de bruit diminue considérablement par rapport au pourcentage initial jusqu'á atteindre un pourcentage de bruit de 19.934\%. D'un autre côté, le pourcentage de bruit présent dans le signal filtré par le deuxième filtre de Butterworth ($F_c = 200 Hz$) est bien plus grand que celui du premier filtre, mais plus petit que celui du signal orignal. Cette augmentation du pourcentage de bruit est dû au fait que le bruit rouge n'est pas un bruit avec des fréquence uniformes comme le bruit blanc, il est un brui décroisant, donc il y a des fréquences qui ne sont pas filtre ou ne sont pas bien filtre. De plus, on peut croire qu'il y a un nouveau bruit qui s'ajoute au signal mais cela reste une simple hypothèse à confirmer. Nous pouvons donc dire que cette modification n'est pas convenable pour l'atténuation du bruit rouge si nous le comparant avec l'efficacité d'atténuation du premier filtre de Butterworth.
 
 
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
-    \textbf{Méthodes} & \textbf{Rouge (30\%)} \\
+    \textbf{Méthodes} & \textbf{Marron (30\%)} \\
     \hline
     Sans méthode &  35.874\\
     Butterworth &  19.935\\
     Butterworth mod &  24.363\\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit Rouge}
+    \caption{Résultats des méthodes pour 30\% du bruit Marron}
     \label{table:t9}
 \end{table}
 
-\subsubsection{Conclusion}
-La modification du filtre passe-bas de Butterworth peut être tenue en compte lorsque nous voulant filtrer un fichier audio contenant du bruit blanc. Nous avons pu constater comment le pourcentage de bruit diminuer fortement lorsque nous filtrant une chanson avec une addition de 30\% de bruit blanc. Or cette modification ne doit pas être tenue en compte lorsque nous filtrant du bruit Rose ou du bruit Rouge, parce que, comme nous avons pu le constater, cette modification entraine une augmentation du pourcentage de bruit après filtrage, le pourcentage de bruit est en effet diminué mais il est considérablement plus important que lorsque que nous filtrant le même signal avec le premier filtre de Butterworth.
+\subsubsection{Résultats Qualitatifs}
+
+Il est important de faire une étude qualitative des signaux obtenues pour confirmer les résultats présentement. Pour cela on reproduira chacun des signaux obtenues pour les deux filtres et on fera un classification sur 3 différents tableau, un pour chaque bruit. 
+
+\textbf{Remarque: } La classifications des tableaux de cette partie se fait dans une échelle de 1 à 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
+
+Premièrement, dans le tableau (voir tableau ci-dessous) correspondant au signal avec une addition de 30\% de bruit blanc et filtré par le filtre de Butterworth et le filtre de Butterworth modifié, on peut remarquer qu'en écoutant les signaux obtenues, la perception du deuxième signal (Butterworth modifié) est beaucoup plus compréhensible que celle du premier signal (Butterworth). De plus, on peut constater que le premier signal possède encore du bruit, alors que le deuxième ne possède pas de bruit ou du moins on ne peut pas le percevoir. Cependant, le volumen du deuxième signal est beaucoup moins fort que celui du premier signal.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
+    \hline
+    Butterworth &  7\\
+    Butterworth mod &  9\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Blanc}
+    \label{table:t10}
+\end{table}
+
+
+Dans un deuxième temps, dans le tableau (voir tableau ci-dessous) correspondant au signal avec une addition de 30\% de bruit rose et filtré par le filtre de Butterworth et le filtre de Butterworth modifié. On peut remarquer que lorsqu'on écoute les 2 signaux résultants de chaque méthode de filtrage, il y a une présence de bruit, où le premier signal (Butterworth) est un peu moins bruité et plus compréhensible que le deuxième signal (Butterworth modifiée).
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Rose (30\%)} \\
+    \hline
+    Butterworth &  6\\
+    Butterworth mod &  5\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Rose}
+    \label{table:t11}
+\end{table}
+
+Finalement, dans le tableau (voir tableau ci-dessous) correspondant au signal avec une addition de 30\% de bruit rouge et filtré par le filtre de Butterworth et le filtre de Butterworth modifié. On peut remarquer que lorsqu'on écoute les 2 signaux résultants de chaque méthode de filtrage, il y a une présence de bruit, où le premier signal (Butterworth) est un peu moins bruité et plus compréhensible que le deuxième signal (Butterworth modifiée).
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Marron (30\%)} \\
+    \hline
+    Butterworth &  6\\
+    Butterworth mod &  4\\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Marron}
+    \label{table:t12}
+\end{table}
+
 
 \subsection{\textbf{Wiener modifiée}}
+En voyant le comportement du filtre de Wiener et en tenant en compte que sa performance avec les enregistrements audio a été remarquable avec le bruit rouge. Maintenant on va effectuer une étude sur la performance du filtre de Wiener sur un contexte différent, étant celui des chansons et pour cela on utilisera la chanson \textit{« Giant »} de \textit{ Calvin Harris } avec \textit{Rag'n'Bone Man}. Dans cette étude, on comparera la méthode de Weiner étudié précédemment avec une nouvelle méthode qui corresponde au filtre de Wiener avec les modifications suivantes :
+
+\begin{enumerate}
+    \item Dans fonction \textit{segment} on augmentera la valeur de $W$, en le passant de $256$ à $400$, dans le but de vérifier si en augmente le nombre d’échantillons, le comportement de la méthode s’améliore.
+    \item On change $SP$ qui était de $0,4$ et on le met maintient à $0,5$, pour chercher une meilleure performance avec un pourcentage de changement plus élevée.
+    \item Dans la fonction $vad$ on change la valeur de $NoiseMArgin$, on la met à $2,5$ dans le but de réduire l’erreur.   
+\end{enumerate}
+Les résultats de cette implémentation se trouve dans les tableaux suivants. Pour le cas du bruit blanc, on a ajouté 30\% de celui-ci et on a utilisé les 2 méthodes de filtrage Wiener et Wiener mod. Les résultats se trouvent dans le tableau \ref{table:t13}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
+    \hline
+    Sans méthode &  85.1445\\
+    Wiener & 64.6183 \\
+    Wiener mod & 53.3508  \\
+    \end{tabular}
+    \caption{Résultats des méthodes pour 30\% du bruit Blanc}
+    \label{table:t13}
+\end{table}
+
+On constate que dans le cas du bruit banc a 30\%, le filtre de Wiener n’a pas atteint sa meilleure performance. En effet, la méthode a réussi à attenue le bruit, mais il y a y une perte d’information et volume du son résultant. D’un autre côté, avec la méthode modifiée on a réussi à diminuer un peu plus le bruit, mais la différence entre les 2 méthodes est minimale, mais l’audio résultant est bien plus compréhensible.\medskip
+
+Pour le cas du bruit rose, on ajout 30\% de celui-ci et on utilise les 2 méthodes de filtrage : Wiener et Wiener mod. Les résultats se trouvent dans le tableau \ref{table:t14}.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Rose (30\%)} \\
+    \hline
+    Sans méthode &  74.7836\\
+    Wiener & 42.8574 \\
+    Wiener mod & 53.8450 \\
+    \end{tabular}
+    \caption{Résultats des méthodes pour 30\% du bruit Rose}
+    \label{table:t14}
+\end{table}
+Dans ce cas, on voit que le comportement du filtre de Wiener est meilleur si on le compare avec la cas précèdent où il y avait de partie de la chanson où le volumen diminuer considérablement. Par rapport à la modification, la performance a empiré, même si l’audio continuer à être compréhensible, avec une présence considérable de bruit.\medskip
+Pour le cas du bruit rouge, on ajout 30\% de celui-ci et on utilise les 2 méthodes de filtrage : Wiener et Wiener mod. Les résultats se trouvent dans le tableau \ref{table:t15}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Marron (30\%)} \\
+    \hline
+    Sans méthode &  69.7285\\
+    Wiener &  26.4134\\
+    Wiener mod & 34.4820 \\
+    \end{tabular}
+    \caption{Résultats des méthodes pour 30\% du bruit Marron}
+    \label{table:t15}
+\end{table}
+Dans le cas du bruit rouge, on constate que le comportement de la méthode c’est amélioré. Dans le cas de la méthode modifiée, on remarque que la performance a empiré mais la perception de la chanson continue à être meilleure dans le cas de la méthode modifier que dans le cas de la chanson original avec les autres bruits.
+
+\medskip
+\subsubsection{\textit{Analyse de Wiener modifiée avec des enregistrements audios}}
+Tandis que la modification du filtre de Wiener s’est réalisée pour étudier son comportement dans le cas d’une chanson, on étudiera aussi son comportement dans le cas des enregistrements audios, comme précédemment. 
+\medskip 
+Le tableau \ref{table:t16} fait référence à l’étude des filtres de Wiener et de Wiener modifiée dans le cas d’un enregistrement audio avec 30\% de bruit blanc.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
+    \hline
+    Sans méthode & 80.658
+  \\
+    Wiener & 44.218 \\
+    Wiener mod &65.6812  \\
+    \end{tabular}
+    \caption{Résultats des méthodes pour 30\% du bruit Blanc}
+    \label{table:t16}
+\end{table}
+
+Le tableau \ref{table:t17} fait référence à l’étude des filtres de Wiener et de Wiener modifiée dans le cas d’un enregistrement audio avec 30\% de bruit rose.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Rose (30\%)} \\
+    \hline
+    Sans méthode & 78.7463 \\
+    Wiener & 44.082 \\
+    Wiener mod & 54.67 \\
+    \end{tabular}
+    \caption{Résultats des méthodes pour 30\% du bruit Rose}
+    \label{table:t17}
+\end{table}
+
+Le tableau \ref{table:t18} fait référence à l’étude des filtres de Wiener et de Wiener modifiée dans le cas d’un enregistrement audio avec 30\% de bruit rouge.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Marron (30\%)} \\
+    \hline
+    Sans méthode & 77.836 \\
+    Wiener & 36.209 \\
+    Wiener mod & 39.4569 \\
+    \end{tabular}
+    \caption{Résultats des méthodes pour 30\% du bruit Marron}
+    \label{table:t18}
+\end{table}
+Dans ce cas, et comme on se l’attendait, après avoir analyser les résultats dans le cas de chanson, on remarque que dans ce cas, la méthode modifie a eu un comportement bien pire que la méthode original, même avec le bruit blanc où il a démontré une amélioration. 
+\medskip 
+
+\textit{Résultats Qualitatifs}
+Dans le tableau \ref{table:t19}, on peut voir la classification que nous avons donné au résultat de chaque méthode de filtrage pour donner suite à un ajout de 30\% de bruit blanc au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
+    \hline
+   Wiener &  4.5 \\
+    Wiener mod & 4  \\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Blanc}
+    \label{table:t19}
+\end{table}
+\hfill \\
+Dans le tableau \ref{table:t20} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage pour donner suite à un ajout de 30\% de bruit rose au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.  
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Rose (30\%)} \\
+    \hline
+    Wiener & 5.5 \\
+    Wiener mod &  5 \\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Rose}
+    \label{table:t20}
+\end{table}
+\hfill \\
+Dans le tableau \ref{table:t21} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage pour donner suite à un ajout de 30\% de bruit rouge au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{ l  c }
+    \textbf{Méthodes} & \textbf{Marron (30\%)} \\
+    \hline
+    Wiener & 6.5 \\
+    Wiener mod &  6 \\
+    \end{tabular}
+    \caption{Qualification des méthodes pour 30\% du bruit Marron}
+    \label{table:t21}
+\end{table}
+\hfill \\
+Il est clair que dans tous les cas, tanto dans celui des enregistrements audios, tanto dans celui des chanson, le filtre de Wiener a un meilleur comportement dans l’atténuation du bruit rouge. De plus, dans ce filtre a eu un meilleur comportement dans le cas des chansons que dans le cas de l’enregistrement audio.
+
+
+
+
+
 
 \subsection{\textbf{RNNbruit modifiée}}
-Comme nous avons étudiés précédemment, la méthode RRNbruit a était inventer pour être employé avec des enregistrements audio. Mais lorsque nous sortons du contexte habituel et nous l’employant pour l’atténuation du bruit aléatoire (par exemple l’atténuation du bruit blanc, du bruit rose et du bruit rouge) présent dans des enregistrements sonores tels que des chansons, nous nous attendrons à avoir un comportement différent à celui que la méthode a lorsqu’elle employé dans son domaine. Pour réaliser cette étude, nous analyserons $40s$ de la chanson \textit{« Giant »} de \textit{« Calvin Harris »} et \textit{Rag'n'Bone Man}, avec une addition de 30\% de bruit banc, rose et rouge. Nous avons utilisé le software Matlab R2020a et tous les enregistrements audios on était traiter sous le format \texttt{.wav}.
+Comme nous avons étudiés précédemment, la méthode RRNbruit a était inventer pour être employé avec des enregistrements audio. Mais lorsque nous sortons du contexte habituel et nous l’employant pour l’atténuation du bruit aléatoire (par exemple l’atténuation du bruit blanc, du bruit rose et du bruit rouge) présent dans des enregistrements sonores tels que des chansons, nous nous attendrons à avoir un comportement différent à celui que la méthode a lorsqu’elle employé dans son domaine. Pour réaliser cette étude, nous analyserons $40s$ de la chanson \textit{« Giant »} de \textit{« Calvin Harris »} et \textit{Rag'n'Bone Man}, avec une addition de 30\% de bruit banc, rose et rouge. Nous avons utilisé le software Matlab R2020a et tous les enregistrements audios on était traité sous le format \texttt{.wav}.
 
 Nous avons filtré les enregistrements audios avec la méthode RRNbruit et nous constatons que les résultats obtenus sont de très mauvaise qualité. Ces résultats étaient prévisibles. Le fonctionnement de la méthode atténué le signal sonore correspondant à la chanson de façon que ce dernier reste méconnaissable, c’est-à-dire que cette méthode a réduit le bruit mais aussi une partie importante de la chanson originale, qui se traduit par une perte d’information. C’est pour cela que nous proposons une modification de la méthode que nous avons nommé RRNbruit modifiée.
 
@@ -1535,19 +2034,42 @@ La méthode ou la modification RNNbruit mod est composé de 4 étapes :
 
 \begin{enumerate} % Lista
     \item \textbf{Redimensionnement}:on prend les matrices de l’entrée de la méthode RNNbruit et on les coupe pour qu’elles aient le même nombre de lignes que les matrices des sorties de la méthode.
- 
+    
+        %imagen
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.7]{mod1.png}
+        \end{figure}
     
     \item \textbf{Création de matrices}: on prend chaque matrice de l’entré avec sa respective matrice filtrée par RNNbruit et on calcule la distance moyenne entre chaque élément de celles-ci. Ce résultat est enregistré dans une nouvelle matrice.
  
+        %imagen
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.7]{mod2.png}
+        \end{figure}
     
-    \item \textbf{reconfiguration}: comme l’opération effectuer dans l’étape précédant a pu générer des valeurs qui se trouvent en dehors de l’intervalle $[-1,1]$, on réalise une opération de reconfiguration de cet intervalle.
+    \item \textbf{Reconfiguration}: comme l’opération effectuer dans l’étape précédant a pu générer des valeurs qui se trouvent en dehors de l’intervalle $[-1,1]$, on réalise une opération de reconfiguration de cet intervalle.
+    
+        %imagen
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.6]{mod3.png}
+        \end{figure}    
     
     \item \textbf{Filtre passe-bas}: finalement, on implémente un filtre passe-bas jusqu’à la fréquence de bande passante de $10 kHz$ en utilisant la fonction \texttt{lowpass(y, 10000,f)} qui présente en sortie le fichier audio filtrée.
+    
+        %imagen
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.7]{mod4.png}
+        \end{figure}    
+    
 \end{enumerate}
 
-Les résultats de cette implémentation se trouve dans les tableaux suivants. Pour le cas du bruit blanc, on a ajouté 30\% de celui-ci et on a utilisé les 2 méthodes de filtrage RNNbruit et RNNbruit mod. Les résultats se trouvent dans le tableau \ref{table:t10}.
+Les résultats de cette implémentation se trouve dans les tableaux suivants. Pour le cas du bruit blanc, on a ajouté 30\% de celui-ci et on a utilisé les 2 méthodes de filtrage RNNbruit et RNNbruit mod. Les résultats se trouvent dans le tableau \ref{table:t22}.
 
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
@@ -1556,15 +2078,15 @@ Les résultats de cette implémentation se trouve dans les tableaux suivants. Po
     RNNbruit &  99.985\\
     RNNbruit mod &  82.555\\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit Blanc}
-    \label{table:t10}
+    \caption{Résultats quantitatifs des méthodes pour 30\% du bruit Blanc}
+    \label{table:t22}
 \end{table}
 On peut constater que le pourcentage de bruit de la méthode RNNbruit est très grand. Ceci peut être mis en  évidence lorsque on reproduit le fichier audio et on constate aussi que ce fichier présente une perte d’information très importante. Alors que la méthode RNNbruit mod réussit un filtrage sans perte d’information, c’est-à-dire que l’enregistrement audio est toujours compréhensible.
 
-Pour le cas du bruit rose, on ajout 30\% de celui-ci et on utilise les 2 méthodes de filtrage : RNNbruit et RNNbruit mod. Les résultats se trouvent dans le tableau \ref{table:t11}.
+Pour le cas du bruit rose, on ajout 30\% de celui-ci et on utilise les 2 méthodes de filtrage : RNNbruit et RNNbruit mod. Les résultats se trouvent dans le tableau \ref{table:t23}.
 
 
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
@@ -1573,13 +2095,13 @@ Pour le cas du bruit rose, on ajout 30\% de celui-ci et on utilise les 2 méthod
     RNNbruit &  362.83\\
     RNNbruit mod &  55.151\\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit Rose}
-    \label{table:t11}
+    \caption{Résultats quantitatifs des méthodes pour 30\% du bruit Rose}
+    \label{table:t23}
 \end{table}
 On peut constater que le pourcentage de bruit de la méthode RNNbruit est très grand. Ceci peut être mis en évidence lorsque on reproduit le fichier audio et on constate aussi que ce fichier présente une perte d’information très importante. Alors que la méthode RNNbruit mod réussir l’atténuation du bruit et l’enregistrement audio continue à être compressible, c’est-à-dire que cette méthode ne présente pas des pertes d’information. 
-Pour le cas du bruit rouge, on ajout 30\% de celui-ci et on utilise les 2 méthodes de filtrage : RNNbruit et RNNbruit mod. Les résultats se trouvent dans le tableau \ref{table:t12}.
+Pour le cas du bruit rouge, on ajout 30\% de celui-ci et on utilise les 2 méthodes de filtrage : RNNbruit et RNNbruit mod. Les résultats se trouvent dans le tableau \ref{table:t24}.
 
-\begin{table}[hbt!]
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Marron (30\%)} \\
@@ -1588,18 +2110,19 @@ Pour le cas du bruit rouge, on ajout 30\% de celui-ci et on utilise les 2 métho
     RNNbruit &  362.76\\
     RNNbruit mod &  56.702\\
     \end{tabular}
-    \caption{Qualification des méthodes pour 30\% du bruit Marron}
-    \label{table:t12}
+    \caption{Résultats quantitatifs des méthodes pour 30\% du bruit Marron}
+    \label{table:t24}
 \end{table}
 
 On peut constater que le pourcentage de bruit de la méthode RNNbruit est très grand. Ceci peut être mis en  évidence lorsque on reproduit le fichier audio et on constate aussi que ce fichier présente une perte d’information très importante. Alors que la méthode RNNbruit mod réussir l’atténuation du bruit et l’enregistrement audio continue à être compressible, c’est-à-dire que cette méthode ne présente pas des pertes d’information.
 
-\subsubsection{Comparación con RNNbruit en audios de voz}
-Si bien la modificación RNNbruit modifiée se realizó en un contexto diferente al cual fue creado RNNbruit, resulta natural especular al respecto de qué pasaría si se comparara la modificación con el método original en su contexto orignial, es decir, en audios de voz. Los resultados obtenidos se muestran en las tablas a continuación, similar a las tablas \ref{table:t1}, \ref{table:t2} y \ref{table:t3}, pero en este caso únicamente se compara RNNbruit y RNNbruit modifiée.
+\subsubsection{Comparaison de RNNbruit dans des enregistrements audios et dans voix}
+
+Alors que la modification RNNbruit modifiée a été réalisé dans un contexte diffèrent à celui de RNNbruit, il est normal d’avoir des spéculations là-dessous, par exemple, on est mené à nous demande ce qui arriverai si on compare la méthode modifiée avec la méthode originale dans le contexte de la méthode original, c’est-à-dire avec des enregistrements audios. Les résultats obtenus se trouve dans les tableaux ci-dessous, similaires aux tableaux \ref{table:t1}, \ref{table:t2} et \ref{table:t3}, mais dans ce cas, on compare RNNbruit et RNNbruit modifiée
 
 \paragraph{Résultats quantitatifs}
-Dans le tableau \ref{table:t13} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit blanc a l’enregistrement audio et on le filtre avec chaque méthode.
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t25} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit blanc a l’enregistrement audio et on le filtre avec chaque méthode.
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
@@ -1609,11 +2132,11 @@ Dans le tableau \ref{table:t13} on peut voir le pourcentage de bruit résultant 
     RNNbruit mod & 11.859 \\
     \end{tabular}
     \caption{Résultats des méthodes pour 30\% du bruit blanc}
-    \label{table:t13}
+    \label{table:t25}
 \end{table}
 \hfill \\
-Dans le tableau \ref{table:t14} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit rose a l’enregistrement audio et on le filtre avec chaque méthode.
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t26} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit rose a l’enregistrement audio et on le filtre avec chaque méthode.
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
@@ -1623,11 +2146,11 @@ Dans le tableau \ref{table:t14} on peut voir le pourcentage de bruit résultant 
     RNNbruit mod & 5.4064 \\
     \end{tabular}
     \caption{Résultats des méthodes pour 30\% du bruit rose}
-    \label{table:t14}
+    \label{table:t26}
 \end{table}
 \hfill \\
-Dans le tableau \ref{table:t15} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit rouge a l’enregistrement audio et on le filtre avec chaque méthode.
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t27} on peut voir le pourcentage de bruit résultant lorsqu’on ajoute 30\% de bruit rouge a l’enregistrement audio et on le filtre avec chaque méthode.
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Marron (30\%)} \\
@@ -1637,16 +2160,16 @@ Dans le tableau \ref{table:t15} on peut voir le pourcentage de bruit résultant 
     RNNbruit mod & 10.552 \\
     \end{tabular}
     \caption{Résultats des méthodes pour 30\% du bruit Marron}
-    \label{table:t15}
+    \label{table:t27}
 \end{table}
 \hfill \\
 
-Se esperaba que el método modificado fuera peor con respecto al método original, lo cual sucedió para el ruido blanco y marron pero de acuerdo con los resultados cuantitativos no para el ruido rosa. Sin embargo, como ya se mencionó anteriormente, esta prueba numérica no le hace justicia a un componente importante de los resultados y es por esto que se debe respaldar con una prueba auditiva cualitativa.
+On s’attendais a que la méthode modifiée soit moins efficace par rapport à la méthode originale, ce qui est bien arrivée dans le cas du bruit blanc et du bruit rouge. Mais, par rapport aux résultats quantitatifs, ce n’est pas le cas. Cependant, comme on l’a déjà dit précédemment, ce test numérique ne fait pas justice a une composante importante des résultats et c’est pour cela qu’on doit se soutenir avec un test auditif qualitatif.
 
 \paragraph{Résultats qualitatifs}
 \hfill \\
-Dans le tableau \ref{table:t16} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit blanc au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t28} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite  à un ajout de 30\% de bruit blanc au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Blanc (30\%)} \\
@@ -1655,11 +2178,11 @@ Dans le tableau \ref{table:t16} On peut voir la classifications que nous avons d
     RNNbruit mod &  3 \\
     \end{tabular}
     \caption{Qualification des méthodes pour 30\% du bruit blanc}
-    \label{table:t16}
+    \label{table:t28}
 \end{table}
 \hfill \\
-Dans le tableau \ref{table:t17} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit rose au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.  
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t29} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage pour donner suite à un ajout de 30\% de bruit rose au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.  
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Rose (30\%)} \\
@@ -1668,11 +2191,11 @@ Dans le tableau \ref{table:t17} On peut voir la classifications que nous avons d
     RNNbruit mod &  4 \\
     \end{tabular}
     \caption{Qualification des méthodes pour 30\% du bruit rose}
-    \label{table:t17}
+    \label{table:t29}
 \end{table}
 \hfill \\
-Dans le tableau \ref{table:t18} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit rouge au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
-\begin{table}[hbt!]
+Dans le tableau \ref{table:t30} On peut voir la classifications que nous avons donné au résultat de chaque méthode de filtrage suite a un ajout de 30\% de bruit rouge au signal original. Cette classification va de 1 jusqu'á 10, où 1 signifie que la perception auditive est de très mauvaise qualité et 10 signifie que la perception auditive est de haute qualité.
+\begin{table}[H]
     \centering
     \begin{tabular}{ l  c }
     \textbf{Méthodes} & \textbf{Marron (30\%)} \\
@@ -1681,14 +2204,39 @@ Dans le tableau \ref{table:t18} On peut voir la classifications que nous avons d
     RNNbruit mod &  5 \\
     \end{tabular}
     \caption{Qualification des méthodes pour 30\% du bruit Marron}
-    \label{table:t18}
+    \label{table:t30}
 \end{table}
 \hfill \\
 
-Esta prueba es más confiable, pues aunque sea subjetiva, se tienen en cuenta aspectos que resaltan más facilmente de forma sensorial. Por ejemplo, con esta prueba fue más evidente que el método original funciona muy bien para audios de voz, mientras que el modificado genera alguna reducción de ruido pero no tan considerable como el original.
+On observe que ce test est bien plus fiable, dans la mesure où on tient en compte les aspects qui surligne plus facilement la forme sensorielle, même s’il s’agit d’un test subjectif. Par exemple, avec ce test, on remarque que la méthode originelle était plus efficace avec les enregistrements audios, alors que la méthode modifiée produise une atténuation du bruit mais pas aussi importante que l’original. On constante que la méthode modifiée s’exécute d’une meilleure façon que l’original dans le cas du bruit rose sur le tableau \ref{table:t26}, cela est confirmer par les résultats du tableau \ref{table:t29}.
 
 \newpage
 \section{Conclusions}
+\hfill \\
+
+Dans les mesures quantitatives, chaque exécution particulières des méthodes a été consistante avec les hippothèses générer par l’investigation théorique. Cependant, le contraste engendrait lorsqu’on compare les trois méthodes originales dans le contexte d’un enregistrement audio a relevé certaines particularités qu’il faut surligner. Dans le cas du bruit blanc \ref{table:t1}, même si la méthode hybride RNNbruit fut celle qui a eu la meilleure performance, la méthode Butter T a produit des résultats considérablement bons qu’il ne faut pas négliger, parce que cette méthode est beaucoup moins couteuse lors de l’exécution si on la compare avec le coup d’exécution de la méthode RNNbruit. Dans le cas du bruit rose \ref{table:t2} , la méthode hybride RNNbruit a eu la meilleure performance et la méthode de Wiener a eu la pire performance, parce que cette dernière a ajouté du nouveau bruit au signal de sortie. Dans le cas du bruit rouge sur \ref{table:t3}, à nouveau la méthode hybride RNNbruit a eu la meilleure performance, cependant, il est important de surligner le comportement des méthodes de Wiener et Butter T, qui ont étaient similaires, le suffisamment pour conclure que dans ce cas il est moins couteux d’implémenté la méthode de Wiener. Cependant, comme expliqué tout au long du travail, comme il s’agit de méthodes implémentées sur des enregistrements audios, il a été nécessaire de considérer l’addition d’une évaluation quantitative des méthodes qui tiendrait en compte les composantes sensorielles, c’est-à-dire, une évaluation auditive. Ceci revient à dire que le test qualitatif a fonction comme une validation (positive ou négative) des conclusions précédentes. 
+
+Dans les mesures qualitatives, on a obtenu des résultats consistant avec les conclusions des mesures quantitatif pour le cas du bruit blanc sur \ref{table:t1} et du bruit rouge sur \ref{table:t3}. Cependant, dans le cas du bruit rose sur \ref{table:t2}, le test auditif a montré que, même si, numériquement la méthode de Wiener ajoutait du bruit a l’enregistrement audio résultant, celui-ci s’entendait relativement bien. Ce résultat a refoncer le besoin de réaliser un test auditif en parallèle d’un test numérique pour obtenir de conclusions plus précises sur les comportements des méthodes. 
+
+\medskip
+
+Ayant dit cela, lorsqu’on sort du contexte les méthodes et on les utilise dans le filtrage d’une chanson au lieu du filtrage d’un enregistrement audio, le comportement a aussi été consistant avec la théorie. Dans le cas particulier de la méthode hybride de RNNbruit, on a évidence (comme on prévoyait) des mauvais résultats. Par conséquent, on a proposé une modification de celui-ci et on a obtenu la méthode RNNbruit modifiée qui s’est comporte efficacement sur \ref{table:t22}, \ref{table:t23} et \ref{table:t24} en mettant en évidence l’atténuation du bruit pour tous les bruits implémentés, alors que RNNbruit a produit un ajout exponentiel de bruit. Cependant, lorsqu’on compare les 2 méthodes dans le contexte d’enregistrements audios, la méthode RNNbruit a été bien plus performantes pour tous les types de bruit étudiés sur \ref{table:t28}, \ref{table:t29} et \ref{table:t30}. Ces résultats proposent que dans le contexte des enregistrements audios, il est préférable d’utiliser la méthode RNNbruit mais pour les chansons il est préférable d’utiliser la méthode RNNbruit modifiée
+
+
+\medskip
+
+Dans le cas du filtre de Wiener, le comportement de la méthode s’est amélioré avec le bruit rouge, dans le cas des enregistrement audio comme dans le cas des chanson. De plus la méthode modifié a évidence une meilleur performance avec le bruit qu’avec le bruit blanc et le bruit rose. 
+
+On peut dire alors que la méthode modifiée peut être tenue en compte si on chercher à filtrer un bruit blanc présent dans une chanson, car comme on a vue, la méthode modifiée a réduit plus le bruit blanc que la méthode original. 
+
+Finalement, en nous appuyant sur les résultats obtenue, on peut conclure en disant que la méthode modifiée est plus convenable lorsqu’on veut filtre un bruit rouge. 
+
+
+\medskip
+Dans le cas du filtre de Butterworth, la modification du filtre passe-bas de Butterworth peut être tenue en compte lorsque nous voulant filtrer un fichier audio contenant du bruit blanc. Nous avons pu constater comment le pourcentage de bruit diminuer fortement lorsque nous filtrant une chanson avec une addition de 30\% de bruit blanc. Or cette modification ne doit pas être tenue en compte lorsque nous filtrant du bruit Rose ou du bruit Rouge, parce que, comme nous avons pu le constater, cette modification entraine une augmentation du pourcentage de bruit après filtrage, le pourcentage de bruit est en effet diminué mais il est considérablement plus important que lorsque que nous filtrant le même signal avec le premier filtre de Butterworth.
+
+De plus, lorsqu'on effectue une étude qualitatif des signaux obtenues lors de la modification de Butterworth, on se rend compte que cette modification est convenable pour le cas du bruit blanc, parce qu'on perçoit un signal sans bruit. Cependant, dans le cas des bruit rose et rouge, ont conclu que cette modification n'est pas à tenir en compte, même si en comparant les résultats quantitatif avec ceux du filtre initial on remarque que le pourcentage de bruit à diminuer. Dans cette dernière conclusion, il faut tenir compte qu'il s'agit de deux type de signaux sonores différents, dans le cas du filtre initial, on filtre un enregistrement audio et dans le cas du filtre modifiée, on filtre une chanson. Cette différences de types de signaux pourrait nous faire croire que les résultats ne sont pas comparables, or comme s'agit de deux signaux sonores avec des amplitudes semblables, on peut permettre de comparer les résultats, tout en négligeant la différence de types existante.
+
 \newpage
 \section{Webographie}
 \renewcommand\refname{}
@@ -1741,7 +2289,7 @@ Wikipedia. (2020).
 
 \bibitem{12}
 Wiki. (2020).
-\textit{Filtre Chebychev - Chebychev filter}. Novembre 2020, de Wiki Sitio web: \href{https://fr.qaz.wiki/wiki/chebyshev\_filter}{https://fr.qaz.wiki/wiki/chebyshev\_filter}
+\textit{Filtre Tchebychev - Tchebychev filter}. Novembre 2020, de Wiki Sitio web: \href{https://fr.qaz.wiki/wiki/chebyshev\_filter}{https://fr.qaz.wiki/wiki/chebyshev\_filter}
 
 \bibitem{13}
 Wiki. (2020).
@@ -1761,15 +2309,69 @@ Frederic Launay. (2020).
 
 \bibitem{17}
 Laurent Mazliak. (2011).
-\textit{Décomposition spectrale pour le son musical}. Université Paris VI, de Octobre 2020 Sitio web: \href{https://www.lpsm.paris/pageperso/mazliak/DecompositionSpectrale.pdf}{https://www.lpsm.paris/pageperso/mazliak/DecompositionSpectrale.pdf}
+\textit{Décomposition spectrale pour le son musical}. Université Paris VI, d’Octobre 2020 Sitio web: \href{https://www.lpsm.paris/pageperso/mazliak/DecompositionSpectrale.pdf}{https://www.lpsm.paris/pageperso/mazliak/DecompositionSpectrale.pdf}
 
 \bibitem{18}
-Mathoworks. (2020).
+Mathworks. (2020).
 \textit{sptool}. Novembre 2020, de Mathworks Sitio web: \href{https://la.mathworks.com/help/signal/ref/sptool.html}{https://la.mathworks.com/help/signal/ref/sptool.html}
 
 \bibitem{19}
 Mathworks. (2020).
 \textit{Leer y escribir archivos de audio}. Novembre 2020, de Mathworks Sitio web: \href{https://la.mathworks.com/help/matlab/import_export/read-and-get-information-about-audio-files.html}{https://la.mathworks.com/help/matlab/import\_export/read-and-get-information-about-audio-files.html}
+
+\bibitem{20}
+Mathworks. (2020). \textit{butter}. Octobre 2020, de Mathworks Sitio web: \href{https://la.mathworks.com/help/signal/ref/butter.html}{https://la.mathworks.com/help/signal/ref/butter.html}
+
+\bibitem{21}
+Encyclopedia Britannica. (2020). \textit{sound | Properties, Types, \& Facts | Britannica }. Novembre 2020, de Encyclopedia Britannica Sitio web: \href{https://www.britannica.com/science/sound-physics}{https://www.britannica.com/science/sound-physics}
+
+\bibitem{22}
+UiO : Matematisk institutt. (2020). \textit{Applingal Python Chapter 1 and 2, Øyvind Ryan}. Février 2016, de Universitetet i Oslo : Matematisk institutt  Sitio web: \href{https://www.uio.no/studier/emner/matnat/math/nedlagte-emner/MAT-INF2360/v16/kompendiet/applinalgpythonchap1and2.pdf}{https://www.uio.no/studier/emner/matnat/math/nedlagte-emner/MAT-INF2360/v16/kompendiet/applinalgpythonchap1and2.pdf}
+
+\bibitem{23}
+CRIC Montpellier. (2007). \textit{Audition  Promenade round Cochlea autour Cochlée oreille ear organ of Corti oreille ear}. 2007, de CRIC Montpellier, Remy Pujol U254  Sitio web: \href{http://www.neuroreille.com/promenade/francais/sound/fsound.htm}{http://www.neuroreille.com/promenade/francais/sound/fsound.htm}
+
+\bibitem{24}
+The University New Sound Wales: School of Physics. (2006). \textit{What is Sound Spectrum?}. 2006, de UNSW, School of Physics : Music Acoustics  Sitio web: \href{https://newt.phys.unsw.edu.au/jw/sound.spectrum.html}{https://newt.phys.unsw.edu.au/jw/sound.spectrum.html}
+
+\bibitem{25}
+Audacity: Audacity Manual. (2020). \textit{Digital Audio Fundamentals}. Juin 2006, de Audacity: Audacity Manual  Sitio web: \href{https://manual.audacityteam.org/man/digital_audio.html}{https://manual.audacityteam.org/man/digital\_audio.html}
+
+\bibitem{26}
+Mozilla Corporation. (2018). \textit{A Hybrid DSP/Deep Learning Approach toReal-Time Full-Band Speech Enhancement}. 2018, de Jean-Marc Valin, Mozilla Corporation  Sitio web: \href{https://jmvalin.ca/papers/rnnoise_mmsp2018.pdf}{https://jmvalin.ca/papers/rnnoise\_mmsp2018.pdf}
+
+\bibitem{27}
+Michael Nielsen. (2018). \textit{Neural networks and deep learning, Chapter 1}. Décembre 2019, de Michael Nielsen, \textit{Neural Networks and Deep Learning, free online book}  Sitio web: \href{http://neuralnetworksanddeeplearning.com/chap1.html}{http://neuralnetworksanddeeplearning.com/chap1.html}
+
+\bibitem{28}
+Stanford University. \textit{CS 229 - Deep Learning cheatsheet}. de Shervine Amidi (Stanford University), Afshine Amidi (MIT), Sitio web: \href{https://stanford.edu/~shervine/teaching/cs-229/cheatsheet-deep-learning}{https://stanford.edu/~shervine/teaching/cs-229/cheatsheet-deep-learning}
+
+\bibitem{29}
+Mathworks. (2020). \textit{What Is Deep Learning? | How It  Works, Techniques \&  Applications - MATLAB \& Simulink}. 2020, de Mathworks Sitio web: \href{https://www.mathworks.com/discovery/deep-learning.html}{https://www.mathworks.com/discovery/deep-learning.html}
+
+\bibitem{30}
+xip.org / Mozilla. (2017). \textit{RNNoise: Learning Noise Suppression}. Septembre 2017, de Jean-Marc, Mozilla Sitio web: \href{https://jmvalin.ca/demo/rnnoise/}{https://jmvalin.ca/demo/rnnoise/}
+
+\bibitem{31}
+Chen J. , Benesty J. , Huang Y. , Doclo S., (2006). \textit{New Insights Into the Noise Reduction Wiener Filter }  Sitio web: 
+\href{https://www.researchgate.net/publication/3457602_New_insights_into_the_noise_reduction_Wiener_filter}{https://www.researchgate.net/publication/3457602\_New\_insights\_into\_the\_noise\_reduction\_Wiener\_filter}
+
+\bibitem{32}
+Flavio J. Reyes Díaz, Alejandro Roble Gutiérrez, Gabriel Hernández Sierra, José Ramón Calvo de Lara (2018) \textit{Wiener filtering to noise reduction for speaker verification} \href{http://scielo.sld.cu/pdf/rcci/v12n3/rcci11318.pdf}{http://scielo.sld.cu/pdf/rcci/v12n3/rcci11318.pdf}
+
+\bibitem{33}
+Ben Milner, Ibrahim Almajai (2007) \textit{Noisy audio speech enhancement using Wiener filters derived from visual speech }
+\href{https://www.isca-speech.org/archive_open/archive_papers/avsp07/av07_P16.pdf}{https://www.isca-speech.org/archive\_open/archive\_papers/avsp07/av07\_P16.pdf}
+
+\bibitem{34}
+Tatsuya Kako, Kenta Niwa, Kazunori Kobayashi, Hitoshi Ohmuro (2015)\textit{Wiener filter design by estimating sensitivities between distributed asynchronous microphones and sound sources} \href{https://ieeexplore.ieee.org/document/7336945/authors#authors}{https://ieeexplore.ieee.org/document/7336945/authors\#authors}
+
+\bibitem{35}
+David M. Harrison (1999) \textit{Wiener Filters} \href{https://faraday.physics.utoronto.ca/PVB/Harrison/TimeSeries/Wiener.pdf}{https://faraday.physics.utoronto.ca/PVB/Harrison/TimeSeries/Wiener.pdf}
+
+\bibitem{36}
+Fei Wu, Wenxue Yang, Limin Xiao and Jinbin Zhu (2020) \textit{Adaptive Wiener Filter and Natural Noise to Eliminate Adversarial Perturbation} \href{https://doi.org/10.3390/electronics9101634}{https://doi.org/10.3390/electronics9101634}
+
 
 \end{thebibliography}
 \end{flushleft}
